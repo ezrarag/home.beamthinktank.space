@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUserStore, Interest } from '@/store/userStore';
+import { Interest } from '@/store/userStore';
 
 interface InterestSelectorProps {
   selectedInterests: Interest[];

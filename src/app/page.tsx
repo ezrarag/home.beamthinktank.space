@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUserStore } from '@/store/userStore';
+import { useUserStore, UserRole, Interest, UserLocation } from '@/store/userStore';
 import LocationDetector from '@/components/LocationDetector';
 import RoleSelector from '@/components/RoleSelector';
 import InterestSelector from '@/components/InterestSelector';
@@ -36,15 +36,15 @@ export default function HomePage() {
     setIsLoading(false);
   }, [location, role, interests, setReturningUser]);
 
-  const handleLocationDetected = (userLocation: any) => {
+  const handleLocationDetected = (userLocation: UserLocation) => {
     setLocation(userLocation);
   };
 
-  const handleRoleSelected = (selectedRole: any) => {
+  const handleRoleSelected = (selectedRole: UserRole) => {
     setRole(selectedRole);
   };
 
-  const handleInterestToggle = (interest: any) => {
+  const handleInterestToggle = (interest: Interest) => {
     if (interests.includes(interest)) {
       removeInterest(interest);
     } else {
@@ -97,13 +97,12 @@ export default function HomePage() {
             </p>
           </motion.div>
 
-          <QuickStartCard 
-            interests={interests} 
-            role={role} 
-            location={location}
-            onGoBack={handleRestart}
-            canGoBack={true}
-          />
+                  <QuickStartCard
+                    interests={interests}
+                    role={role}
+                    onGoBack={handleRestart}
+                    canGoBack={true}
+                  />
 
           <motion.div
             initial={{ opacity: 0 }}
@@ -182,13 +181,12 @@ export default function HomePage() {
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
               transition={{ duration: 0.5 }}
             >
-              <QuickStartCard 
-                interests={interests} 
-                role={role} 
-                location={location}
-                onGoBack={goBack}
-                canGoBack={true}
-              />
+                      <QuickStartCard
+                        interests={interests}
+                        role={role}
+                        onGoBack={goBack}
+                        canGoBack={true}
+                      />
             </motion.div>
           )}
         </AnimatePresence>

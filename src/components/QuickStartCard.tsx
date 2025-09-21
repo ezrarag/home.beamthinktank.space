@@ -1,15 +1,11 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useUserStore, Interest, UserRole } from '@/store/userStore';
+import { Interest, UserRole } from '@/store/userStore';
 
 interface QuickStartCardProps {
   interests: Interest[];
   role: UserRole;
-  location: {
-    city: string;
-    state: string;
-  };
   onGoBack?: () => void;
   canGoBack?: boolean;
 }
@@ -146,7 +142,7 @@ const ROLE_LABELS = {
   community: 'Community Member'
 };
 
-export default function QuickStartCard({ interests, role, location, onGoBack, canGoBack = false }: QuickStartCardProps) {
+export default function QuickStartCard({ interests, role, onGoBack, canGoBack = false }: QuickStartCardProps) {
   // For now, show the first selected interest for simplicity
   // In a full implementation, you might want to show multiple cards or a combined view
   const primaryInterest = interests[0];
@@ -183,7 +179,7 @@ export default function QuickStartCard({ interests, role, location, onGoBack, ca
         )}
         
         <h2 className="text-3xl font-semibold text-system-text mb-md">
-          Perfect! Here's your personalized experience
+          Perfect! Here&apos;s your personalized experience
         </h2>
         <p className="text-system-text-secondary">
           Based on your interest in <span className="font-semibold text-apple-blue">

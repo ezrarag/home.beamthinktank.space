@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUserStore, UserRole } from '@/store/userStore';
+import { UserRole } from '@/store/userStore';
 
 interface RoleSelectorProps {
   location: {
@@ -70,7 +70,7 @@ export default function RoleSelector({ location, onRoleSelected, onGoBack, canGo
           Welcome to BEAM
         </h2>
         <p className="text-lg text-system-text-secondary mb-sm">
-          We think you're in <span className="font-medium text-apple-blue">{location.city}, {location.state}</span>.
+                  We think you&apos;re in <span className="font-medium text-apple-blue">{location.city}, {location.state}</span>.
         </p>
         <p className="text-base text-system-text-secondary">
           Are you a Participant or Community Member?
