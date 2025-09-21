@@ -1,0 +1,33 @@
+{
+  "name": "home.beamthinktank.space",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@tamagui/animations-react-native": "^1.133.0",
+    "@tamagui/config": "^1.133.0",
+    "@tamagui/core": "^1.133.0",
+    "@tamagui/themes": "^1.133.0",
+    "framer-motion": "^12.23.16",
+    "next": "15.5.3",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20.19.17",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.3",
+    "tailwindcss": "^4",
+    "typescript": "5.9.2"
+  }
+}
