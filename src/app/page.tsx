@@ -2,6 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useAuthStore } from "@/store/authStore";
+import { getFirebaseApp } from "@/lib/firebaseClient";
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup } from "firebase/auth";
+import { useRoleClassifier } from "@/hooks/useRoleClassifier";
+import { useRouter } from "next/navigation";
 
 const PLACEHOLDERS = [
   "I want to join construction…",
@@ -35,6 +40,20 @@ export default function HomePage() {
   const matchedKey = isLocked ? confirmedKey : liveMatchKey;
   const videoUrl = matchedKey ? videoMap[matchedKey] : null;
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+  const { user, setUser } = useAuthStore();
+  const { role, Detector } = useRoleClassifier(inputValue);
+
+  // Initialize Firebase Auth listener once
+  useEffect(() => {
+    getFirebaseApp();
+    const auth = getAuth();
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (!u) return setUser(null);
+      setUser({ uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL });
+    });
+    return () => unsub();
+  }, [setUser]);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -62,6 +81,24 @@ export default function HomePage() {
       // Optional UX: keep focus but readonly to show cursor off
       inputRef.current?.blur();
     }
+  };
+
+  const handleCta = async () => {
+    const targetRole = role ?? 'participant';
+    if (!user) {
+      try {
+        const auth = getAuth();
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+      } catch (e) {
+        console.warn('Google sign-in failed', e);
+        return;
+      }
+    }
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('beam-confirmed-role', targetRole);
+    }
+    router.push(targetRole === 'community' ? '/community-dashboard' : '/participant-dashboard');
   };
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
@@ -103,10 +140,10 @@ export default function HomePage() {
   const easeStandard: [number, number, number, number] = [0.4, 0, 0.2, 1];
 
   return (
-    <div className="min-h-screen bg-[#1A1C21] text-white flex items-center justify-center px-4">
+    <div className="h-[100vh] overflow-hidden bg-[#141414] text-white flex items-center justify-center px-4">
       <div className="w-full max-w-2xl">
         <div className="mb-6 text-center">
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">BEAM</h1>
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#77859D]">BEAM</h1>
         </div>
 
         <div className="relative">
@@ -164,6 +201,8 @@ export default function HomePage() {
           </div>
         </div>
 
+        {Detector}
+
         {isLocked && (
           <div className="mt-3">
             <button
@@ -186,6 +225,13 @@ export default function HomePage() {
               className="mt-6"
             >
               {panelContent}
+              {isLocked && (
+                <div className="mt-4 flex justify-center">
+                  <button onClick={handleCta} className="rounded-full bg-[#89C0D0] text-[#0c1215] px-5 py-2 text-sm font-medium hover:brightness-95">
+                    {role === 'community' ? 'Continue to Community Portal' : 'Continue to Participant Dashboard'}
+                  </button>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
