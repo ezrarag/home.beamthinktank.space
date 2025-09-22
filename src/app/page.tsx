@@ -19,7 +19,7 @@ const videoMap: Record<string, string> = {
   construction:
     "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/home-autopopulate-window-videos%2Fconstruction%20-%208488356-uhd_3840_2160_30fps.mp4?alt=media&token=bb4670ff-2706-49e2-aaec-e74cfb8201a8",
   engineering:
-    "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/home-autopopulate-window-videos%2Fengineer%20-%20pexels-thisisengineering-3862379.jpg?alt=media&token=297175bf-d027-4ad5-bb93-bad0d0bc2851",
+    "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/home-autopopulate-window-videos%2Fconstruction%20-%208488356-uhd_3840_2160_30fps.mp4?alt=media&token=bb4670ff-2706-49e2-aaec-e74cfb8201a8",
   music: "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/home-autopopulate-window-videos%2Fmusic%20-%2012392846_3840_2160_25fps.mp4?alt=media&token=cf8b9181-2724-4f18-8b46-08addcfa55da",
   orchestra:
     "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/home-autopopulate-window-videos%2Forchestra%20-%207095841-uhd_4096_2160_25fps.mp4?alt=media&token=d01ff48b-2868-4ef6-ae35-2fb06e2de0ef",
@@ -83,7 +83,23 @@ export default function HomePage() {
 
   const evaluateMatch = (text: string) => {
     const lowered = text.trim().toLowerCase();
-    const match = Object.keys(videoMap).find((key) => lowered.includes(key)) ?? null;
+    // Create keyword aliases for more flexible matching
+    const keywordAliases: Record<string, string[]> = {
+      engineering: ['engineering', 'engineer'],
+      construction: ['construction', 'construct'],
+      music: ['music', 'musical'],
+      orchestra: ['orchestra', 'orchestral'],
+      chorus: ['chorus', 'choral', 'choir'],
+      medicine: ['medicine', 'medical', 'med'],
+      architecture: ['architecture', 'architect'],
+      support: ['support', 'supporting', 'help', 'helping']
+    };
+    
+    // Find match by checking aliases
+    const match = Object.keys(videoMap).find((key) => {
+      const aliases = keywordAliases[key] || [key];
+      return aliases.some(alias => lowered.includes(alias));
+    }) ?? null;
     setLiveMatchKey(match);
   };
 
@@ -100,19 +116,27 @@ export default function HomePage() {
 
   const handleCta = async () => {
     const targetRole = role ?? 'participant';
+    console.log('CTA clicked, target role:', targetRole, 'user:', user);
+    
     if (!user) {
       try {
+        console.log('Attempting Google sign-in...');
         const auth = getAuth();
         const provider = new GoogleAuthProvider();
         await signInWithPopup(auth, provider);
+        console.log('Google sign-in successful');
       } catch (e) {
-        console.warn('Google sign-in failed', e);
-        return;
+        console.warn('Google sign-in failed, proceeding without auth:', e);
+        // Continue without auth for now
       }
     }
+    
+    // Store role and redirect regardless of auth status
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('beam-confirmed-role', targetRole);
     }
+    
+    console.log('Redirecting to:', targetRole === 'community' ? '/community-dashboard' : '/participant-dashboard');
     router.push(targetRole === 'community' ? '/community-dashboard' : '/participant-dashboard');
   };
 
@@ -233,8 +257,18 @@ export default function HomePage() {
                   muted
                   loop
                   playsInline
+                  onError={(e) => {
+                    console.error('Video failed to load:', videoUrl, e);
+                  }}
+                  onLoadStart={() => {
+                    console.log('Video loading started:', videoUrl);
+                  }}
+                  onCanPlay={() => {
+                    console.log('Video can play:', videoUrl);
+                  }}
                 >
                   <source src={videoUrl} type="video/mp4" />
+                  Your browser does not support the video tag.
                 </video>
 
                 <AnimatePresence>

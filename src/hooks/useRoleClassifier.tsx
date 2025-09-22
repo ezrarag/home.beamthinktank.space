@@ -5,7 +5,7 @@ import LocationDetector from '@/components/LocationDetector';
 import type { UserRole, UserLocation } from '@/store/userStore';
 
 const PARTICIPANT_KEYWORDS = [
-  'study', 'learn', 'class', 'course', 'join', 'engineering', 'orchestra', 'music', 'construction', 'student'
+  'study', 'learn', 'class', 'course', 'join', 'engineering', 'engineer', 'orchestra', 'music', 'construction', 'student'
 ];
 const COMMUNITY_KEYWORDS = [
   'support', 'donate', 'sponsor', 'mentor', 'help', 'back', 'fund'
