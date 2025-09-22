@@ -19,16 +19,30 @@ const videoMap: Record<string, string> = {
   construction:
     "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/home-autopopulate-window-videos%2Fconstruction%20-%208488356-uhd_3840_2160_30fps.mp4?alt=media&token=bb4670ff-2706-49e2-aaec-e74cfb8201a8",
   engineering:
-    "https://videos.pexels.com/video-files/856785/856785-hd_1920_1080_24fps.mp4",
-  music: "https://videos.pexels.com/video-files/8941564/8941564-hd_1920_1080_25fps.mp4",
+    "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/home-autopopulate-window-videos%2Fengineer%20-%20pexels-thisisengineering-3862379.jpg?alt=media&token=297175bf-d027-4ad5-bb93-bad0d0bc2851",
+  music: "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/home-autopopulate-window-videos%2Fmusic%20-%2012392846_3840_2160_25fps.mp4?alt=media&token=cf8b9181-2724-4f18-8b46-08addcfa55da",
   orchestra:
-    "https://videos.pexels.com/video-files/6892779/6892779-hd_1920_1080_25fps.mp4",
+    "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/home-autopopulate-window-videos%2Forchestra%20-%207095841-uhd_4096_2160_25fps.mp4?alt=media&token=d01ff48b-2868-4ef6-ae35-2fb06e2de0ef",
   chorus:
-    "https://videos.pexels.com/video-files/6814424/6814424-hd_1920_1080_25fps.mp4",
+    "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/home-autopopulate-window-videos%2Fchorus%20-%207520855-uhd_4096_2160_25fps.mp4?alt=media&token=33381421-1f65-4a6c-9ddc-6edf85f3c91b",
   medicine:
-    "https://videos.pexels.com/video-files/5998510/5998510-hd_1920_1080_25fps.mp4",
+    "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/home-autopopulate-window-videos%2Fmedicine%20-%202%20-%2018699011-uhd_3840_2160_25fps.mp4?alt=media&token=9015464f-abaf-46e5-a7f9-fc5c97831be1",
   architecture:
     "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/home-autopopulate-window-videos%2Farchietcture%20-%204941465-hd_1920_1080_25fps.mp4?alt=media&token=18f30430-1fe6-4171-8d53-8a0f1eec32d1",
+  support:
+    "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/home-autopopulate-window-videos%2Fsupport%20-%206868669-uhd_3840_2160_30fps.mp4?alt=media&token=a21e823e-4080-4877-8ecb-e6db4e2516bc",
+};
+
+const NEARBY_UNIS = ["University A", "College B"];
+const PAY_RATE_MAP: Record<string, string> = {
+  construction: "$22/hr",
+  engineering: "$28/hr",
+  music: "$18/hr",
+  orchestra: "$20/hr",
+  chorus: "$17/hr",
+  medicine: "$30/hr",
+  architecture: "$24/hr",
+  support: "$15/hr",
 };
 
 export default function HomePage() {
@@ -42,7 +56,8 @@ export default function HomePage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { user, setUser } = useAuthStore();
-  const { role, Detector } = useRoleClassifier(inputValue);
+  const { role, Detector, location } = useRoleClassifier(inputValue);
+  const [isHoveringVideo, setIsHoveringVideo] = useState(false);
 
   // Initialize Firebase Auth listener once
   useEffect(() => {
@@ -108,25 +123,7 @@ export default function HomePage() {
     }
   };
 
-  const panelContent = useMemo(() => {
-    if (videoUrl) {
-      return (
-        <div className="overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgb(20,20,20)] shadow-xl">
-          <video
-            key={videoUrl}
-            className="w-full h-[300px] sm:h-[420px] object-cover"
-            autoPlay
-            muted
-            loop
-            playsInline
-          >
-            <source src={videoUrl} type="video/mp4" />
-          </video>
-        </div>
-      );
-    }
-    return null;
-  }, [videoUrl]);
+  const overlayEase: [number, number, number, number] = [0.4, 0, 0.2, 1];
 
   const resetAll = () => {
     setInputValue("");
@@ -224,7 +221,58 @@ export default function HomePage() {
               transition={{ duration: 0.25, ease: easeStandard }}
               className="mt-6"
             >
-              {panelContent}
+              <div
+                className="relative overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgb(20,20,20)] shadow-xl"
+                onMouseEnter={() => setIsHoveringVideo(true)}
+                onMouseLeave={() => setIsHoveringVideo(false)}
+              >
+                <video
+                  key={videoUrl}
+                  className="w-full h-[300px] sm:h-[420px] object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                >
+                  <source src={videoUrl} type="video/mp4" />
+                </video>
+
+                <AnimatePresence>
+                  {isHoveringVideo && (
+                    <>
+                      <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.2, ease: overlayEase }}
+                        className="absolute top-3 left-3 bg-black/60 text-white text-xs sm:text-sm rounded-md px-3 py-2 shadow-lg"
+                      >
+                        {location ? `${location.city}, ${location.state}` : 'Locating…'}
+                      </motion.div>
+
+                      <motion.div
+                        initial={{ opacity: 0, x: 6, y: 6 }}
+                        animate={{ opacity: 1, x: 0, y: 0 }}
+                        exit={{ opacity: 0, x: 6, y: 6 }}
+                        transition={{ duration: 0.2, ease: overlayEase }}
+                        className="absolute bottom-3 right-3 bg-black/60 text-white text-xs sm:text-sm rounded-md px-3 py-2 shadow-lg"
+                      >
+                        Nearby: {NEARBY_UNIS.join(', ')}
+                      </motion.div>
+
+                      <motion.div
+                        initial={{ opacity: 0, x: -6, y: 6 }}
+                        animate={{ opacity: 1, x: 0, y: 0 }}
+                        exit={{ opacity: 0, x: -6, y: 6 }}
+                        transition={{ duration: 0.2, ease: overlayEase }}
+                        className="absolute bottom-3 left-3 bg-black/60 text-white text-xs sm:text-sm rounded-md px-3 py-2 shadow-lg"
+                      >
+                        Avg pay: {matchedKey ? (PAY_RATE_MAP[matchedKey] || "$15/hr") : "$15/hr"}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
               {isLocked && (
                 <div className="mt-4 flex justify-center">
                   <button onClick={handleCta} className="rounded-full bg-[#89C0D0] text-[#0c1215] px-5 py-2 text-sm font-medium hover:brightness-95">
