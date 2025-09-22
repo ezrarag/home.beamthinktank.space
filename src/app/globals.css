@@ -69,7 +69,7 @@ p {
 
 /* Focus styles following accessibility guidelines */
 :focus-visible {
-  outline: 2px solid #007AFF;
+  outline: 2px solid #23262B; /* Subtle outline to match chat window border */
   outline-offset: 2px;
   border-radius: 4px;
 }
