@@ -1,14 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { motion } from 'framer-motion';
 
 export default function TopNav() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
-  const pathname = usePathname();
 
   const goDashboard = () => {
     if (!user) {

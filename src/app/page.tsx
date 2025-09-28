@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuthStore } from "@/store/authStore";
 import { getFirebaseApp } from "@/lib/firebaseClient";
@@ -377,7 +377,7 @@ export default function HomePage() {
               className="mt-6"
             >
               <div className="text-center text-[rgb(150,150,150)] text-sm sm:text-base">
-                We don't have a video for that yet — but BEAM is growing fast!
+                We don&apos;t have a video for that yet — but BEAM is growing fast!
               </div>
             </motion.div>
           )}

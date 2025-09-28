@@ -28,7 +28,7 @@ export const useAuthStore = create<AuthState>()(
           const { getAuth, signOut } = await import('firebase/auth');
           const auth = getAuth();
           await signOut(auth);
-        } catch (e) {
+        } catch {
           // ignore if firebase not initialized; we still clear local state
         }
         set({ user: null });
