@@ -64,12 +64,20 @@ async function getLocationFromIP(): Promise<{ lat: number; lng: number; city: st
 export default function LocationDetector({ onLocationDetected }: LocationDetectorProps) {
   const [isDetecting, setIsDetecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasValidLocation, setHasValidLocation] = useState(false);
   const { location, locationDetected } = useUserStore();
 
   useEffect(() => {
     // Skip detection if we already have location data
     if (location && locationDetected) {
       onLocationDetected(location);
+      setIsDetecting(false);
+      setHasValidLocation(true);
+      return;
+    }
+
+    // Skip detection if we already have a valid location
+    if (hasValidLocation) {
       setIsDetecting(false);
       return;
     }
@@ -81,6 +89,8 @@ export default function LocationDetector({ onLocationDetected }: LocationDetecto
           navigator.geolocation.getCurrentPosition(
             async (position) => {
               const { latitude, longitude } = position.coords;
+              
+              console.log('Raw geolocation data:', { lat: latitude, lng: longitude, source: 'geolocation' });
               
               // For demo, we'll use mock city data based on coordinates
               // In production, you'd reverse geocode the coordinates
@@ -95,7 +105,12 @@ export default function LocationDetector({ onLocationDetected }: LocationDetecto
                 isNearUniversity: isNearUniversity(latitude, longitude),
               };
               
-              onLocationDetected(userLocation);
+              // Only update if we don't have a valid location yet
+              if (!hasValidLocation && userLocation.city) {
+                console.log('Setting location from geolocation:', userLocation);
+                onLocationDetected(userLocation);
+                setHasValidLocation(true);
+              }
               setIsDetecting(false);
             },
             async (error) => {
@@ -103,6 +118,8 @@ export default function LocationDetector({ onLocationDetected }: LocationDetecto
               
               // Fallback to IP-based location
               const ipLocation = await getLocationFromIP();
+              console.log('Raw IP location data:', { lat: ipLocation.lat, lng: ipLocation.lng, source: 'ip' });
+              
               const userLocation: UserLocation = {
                 lat: ipLocation.lat,
                 lng: ipLocation.lng,
@@ -112,7 +129,12 @@ export default function LocationDetector({ onLocationDetected }: LocationDetecto
                 isNearUniversity: isNearUniversity(ipLocation.lat, ipLocation.lng),
               };
               
-              onLocationDetected(userLocation);
+              // Only update if we don't have a valid location yet
+              if (!hasValidLocation && userLocation.city) {
+                console.log('Setting location from IP:', userLocation);
+                onLocationDetected(userLocation);
+                setHasValidLocation(true);
+              }
               setIsDetecting(false);
             },
             {
@@ -123,6 +145,8 @@ export default function LocationDetector({ onLocationDetected }: LocationDetecto
         } else {
           // No geolocation support, use IP fallback
           const ipLocation = await getLocationFromIP();
+          console.log('Raw IP location data (no geolocation):', { lat: ipLocation.lat, lng: ipLocation.lng, source: 'ip' });
+          
           const userLocation: UserLocation = {
             lat: ipLocation.lat,
             lng: ipLocation.lng,
@@ -132,7 +156,12 @@ export default function LocationDetector({ onLocationDetected }: LocationDetecto
             isNearUniversity: isNearUniversity(ipLocation.lat, ipLocation.lng),
           };
           
-          onLocationDetected(userLocation);
+          // Only update if we don't have a valid location yet
+          if (!hasValidLocation && userLocation.city) {
+            console.log('Setting location from IP (no geolocation):', userLocation);
+            onLocationDetected(userLocation);
+            setHasValidLocation(true);
+          }
           setIsDetecting(false);
         }
       } catch (err) {
@@ -143,7 +172,7 @@ export default function LocationDetector({ onLocationDetected }: LocationDetecto
     };
 
     detectLocation();
-  }, [onLocationDetected, location, locationDetected]);
+  }, [onLocationDetected, location, locationDetected, hasValidLocation]);
 
   if (error) {
     return (

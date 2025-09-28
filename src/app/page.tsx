@@ -7,6 +7,8 @@ import { getFirebaseApp } from "@/lib/firebaseClient";
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup } from "firebase/auth";
 import { useRoleClassifier } from "@/hooks/useRoleClassifier";
 import { useRouter } from "next/navigation";
+import Fuse from "fuse.js";
+import { synonyms } from "@/constants/synonyms";
 
 const PLACEHOLDERS = [
   "I want to join construction…",
@@ -32,6 +34,9 @@ const videoMap: Record<string, string> = {
   support:
     "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/home-autopopulate-window-videos%2Fsupport%20-%206868669-uhd_3840_2160_30fps.mp4?alt=media&token=a21e823e-4080-4877-8ecb-e6db4e2516bc",
 };
+
+// In-memory cache for AI classification results
+const aiCache = new Map<string, string>();
 
 const NEARBY_UNIS = ["University A", "College B"];
 const PAY_RATE_MAP: Record<string, string> = {
@@ -81,25 +86,68 @@ export default function HomePage() {
     inputRef.current?.focus();
   }, []);
 
-  const evaluateMatch = (text: string) => {
-    const lowered = text.trim().toLowerCase();
-    // Create keyword aliases for more flexible matching
-    const keywordAliases: Record<string, string[]> = {
-      engineering: ['engineering', 'engineer'],
-      construction: ['construction', 'construct'],
-      music: ['music', 'musical'],
-      orchestra: ['orchestra', 'orchestral'],
-      chorus: ['chorus', 'choral', 'choir'],
-      medicine: ['medicine', 'medical', 'med'],
-      architecture: ['architecture', 'architect'],
-      support: ['support', 'supporting', 'help', 'helping']
-    };
+  // Helper function to map input to canonical category
+  const mapInputToCategory = async (input: string): Promise<string | null> => {
+    const normalized = input.trim().toLowerCase();
     
-    // Find match by checking aliases
-    const match = Object.keys(videoMap).find((key) => {
-      const aliases = keywordAliases[key] || [key];
-      return aliases.some(alias => lowered.includes(alias));
-    }) ?? null;
+    // Check cache first
+    if (aiCache.has(normalized)) {
+      return aiCache.get(normalized) || null;
+    }
+    
+    const words = normalized.split(/\s+/); // Split into individual words
+    
+    // Step 1: Check each word against synonyms first
+    for (const word of words) {
+      for (const [canonical, synonymList] of Object.entries(synonyms)) {
+        if (synonymList.some(synonym => word.includes(synonym.toLowerCase()) || synonym.toLowerCase().includes(word))) {
+          aiCache.set(normalized, canonical);
+          return canonical;
+        }
+      }
+    }
+    
+    // Step 2: If no synonym match, use Fuse.js for fuzzy matching on each word
+    const fuse = new Fuse(Object.keys(videoMap), {
+      threshold: 0.3,
+      includeScore: true,
+    });
+    
+    for (const word of words) {
+      const results = fuse.search(word);
+      if (results.length > 0) {
+        const category = results[0].item;
+        aiCache.set(normalized, category);
+        return category;
+      }
+    }
+    
+    // Step 3: AI fallback - call OpenAI API
+    try {
+      const response = await fetch('/api/classify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ input: normalized }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.category && Object.keys(videoMap).includes(data.category)) {
+          aiCache.set(normalized, data.category);
+          return data.category;
+        }
+      }
+    } catch (error) {
+      console.warn('AI classification failed:', error);
+    }
+    
+    return null;
+  };
+
+  const evaluateMatch = async (text: string) => {
+    const match = await mapInputToCategory(text);
     setLiveMatchKey(match);
   };
 
@@ -314,6 +362,23 @@ export default function HomePage() {
                   </button>
                 </div>
               )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Fallback message when no match found and input is non-empty */}
+        <AnimatePresence>
+          {!videoUrl && inputValue.trim() && !isLocked && (
+            <motion.div
+              initial={{ height: 0, opacity: 0, y: -8 }}
+              animate={{ height: "auto", opacity: 1, y: 0 }}
+              exit={{ height: 0, opacity: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: easeStandard }}
+              className="mt-6"
+            >
+              <div className="text-center text-[rgb(150,150,150)] text-sm sm:text-base">
+                We don't have a video for that yet — but BEAM is growing fast!
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

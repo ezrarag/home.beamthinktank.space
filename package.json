@@ -13,9 +13,11 @@
     "@tamagui/config": "^1.133.0",
     "@tamagui/core": "^1.133.0",
     "@tamagui/themes": "^1.133.0",
-    "framer-motion": "^12.23.16",
     "firebase": "^10.14.1",
+    "framer-motion": "^12.23.16",
+    "fuse.js": "^7.1.0",
     "next": "15.5.3",
+    "openai": "^5.23.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "zustand": "^5.0.8"
