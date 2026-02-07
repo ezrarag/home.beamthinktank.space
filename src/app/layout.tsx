@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import TopNav from "@/components/TopNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,8 +30,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#141414] text-system-text`}
       >
-        <TopNav />
-        <div className="pt-14 h-[calc(100vh-56px)] overflow-hidden bg-[#141414]">{children}</div>
+        <div className="min-h-screen w-full min-w-full bg-[#141414]">{children}</div>
       </body>
     </html>
   );
