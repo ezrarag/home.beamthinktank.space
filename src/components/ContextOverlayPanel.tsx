@@ -32,7 +32,7 @@ export default function ContextOverlayPanel() {
           {displayItem?.label}
         </div>
         <div className="mt-2 text-white/70">{displayItem?.description}</div>
-        {displayItem && "children" in displayItem && displayItem.children ? (
+        {displayItem && "children" in displayItem && Array.isArray(displayItem.children) ? (
           <div className="mt-3 grid gap-2 text-sm text-white/80">
             {displayItem.children.map((child: { id: string; label: string }) => (
               <button
