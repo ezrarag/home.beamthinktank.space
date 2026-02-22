@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { getFirebaseApp } from "@/lib/firebaseClient";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { getFirebaseApp, getFirebaseAuth, getFirebaseDb } from "@/lib/firebaseClient";
 
 const STEPS = [
   {
@@ -102,21 +103,38 @@ export default function StudentOnboarding() {
     setIsLoading(true);
     
     try {
+      const auth = getFirebaseAuth();
+      let firebaseUser = auth.currentUser;
+
       // Ensure user is authenticated
-      if (!user) {
-        const auth = getAuth();
+      if (!firebaseUser) {
         const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
+        const signInResult = await signInWithPopup(auth, provider);
+        firebaseUser = signInResult.user;
       }
 
-      // Store onboarding data in localStorage (in real app, this would go to Firestore)
+      if (!firebaseUser) {
+        throw new Error("Unable to resolve authenticated Firebase user.");
+      }
+
       const onboardingData = {
         role: 'student',
+        uid: firebaseUser.uid,
+        email: firebaseUser.email ?? null,
         skills: selectedSkills,
         goals: selectedGoals,
         organizations: selectedOrganizations,
         completedAt: new Date().toISOString()
       };
+
+      await setDoc(
+        doc(getFirebaseDb(), "users", firebaseUser.uid, "profiles", "onboarding"),
+        {
+          ...onboardingData,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
 
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('beam-onboarding-data', JSON.stringify(onboardingData));
@@ -307,7 +325,7 @@ export default function StudentOnboarding() {
                     whileTap={{ scale: 0.98 }}
                     onClick={async () => {
                       try {
-                        const auth = getAuth();
+                        const auth = getFirebaseAuth();
                         const provider = new GoogleAuthProvider();
                         await signInWithPopup(auth, provider);
                       } catch (error) {

@@ -2,61 +2,61 @@
 
 import Link from "next/link";
 
-export default function HomePage() {
+export default function AdminPortalPage() {
   return (
     <main className="min-h-screen w-full bg-[#0e0e0e] text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-6 py-10 sm:px-8">
+      <div className="mx-auto w-full max-w-5xl px-6 py-10 sm:px-8">
         <header className="border-b border-white/10 pb-6">
           <p className="text-xs uppercase tracking-[0.28em] text-white/50">
-            BEAM Think Tank
+            BEAM Internal
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Home Placeholder
+            Admin Portal
           </h1>
           <p className="mt-3 max-w-2xl text-sm text-white/70 sm:text-base">
-            Temporary entry page for route testing between admin workflows and
-            participant journeys.
+            Internal workspace for BEAM personnel. Use this portal to manage NGO network
+            integrations and website directory entries.
           </p>
         </header>
 
         <section className="mt-8 grid gap-4 sm:grid-cols-2">
           <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <p className="text-xs uppercase tracking-[0.2em] text-white/50">
-              BEAM Internal
+              Website Management
             </p>
-            <h2 className="mt-2 text-xl font-medium">Admin Portal</h2>
+            <h2 className="mt-2 text-xl font-medium">Website Directory</h2>
             <p className="mt-2 text-sm text-white/70">
-              Internal portal for BEAM personnel, including website directory
-              management for NGO network integrations.
+              Add, edit, sort, activate, or remove sites in the BEAM network.
             </p>
             <Link
-              href="/admin"
+              href="/admin/website-directory"
               className="mt-5 inline-flex rounded-full border border-white/20 px-4 py-2 text-xs uppercase tracking-[0.18em] text-white/85 transition hover:border-white/50 hover:text-white"
             >
-              Open Admin Portal
+              Open Website Directory
             </Link>
           </article>
 
           <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <p className="text-xs uppercase tracking-[0.2em] text-white/50">
-              Potential Participant
+              Integration Testing
             </p>
-            <h2 className="mt-2 text-xl font-medium">Participant Flow</h2>
+            <h2 className="mt-2 text-xl font-medium">Participant/Admin Paths</h2>
             <p className="mt-2 text-sm text-white/70">
-              Use this path to test onboarding and participant-side navigation.
+              Quick links for validating participant and NGO-facing routes while integrating
+              other network websites.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <Link
                 href="/participant-dashboard"
                 className="inline-flex rounded-full border border-white/20 px-4 py-2 text-xs uppercase tracking-[0.18em] text-white/85 transition hover:border-white/50 hover:text-white"
               >
-                Open Participant Area
+                Participant Dashboard
               </Link>
               <Link
-                href="/onboard/community"
+                href="/community-dashboard"
                 className="inline-flex rounded-full border border-white/20 px-4 py-2 text-xs uppercase tracking-[0.18em] text-white/85 transition hover:border-white/50 hover:text-white"
               >
-                Join BEAM
+                NGO Dashboard
               </Link>
             </div>
           </article>

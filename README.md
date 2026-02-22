@@ -59,6 +59,15 @@ A minimalist landing page for BEAM that detects visitor location, deduces their 
 
 ## 🔧 Configuration
 
+### Website Directory Admin
+
+- Admin page: `/admin/website-directory`
+- Firestore collection: `beamWebsiteDirectory`
+- Public merged API (internal + readyaimgo): `/api/website-directory`
+- Public internal-only API: `/api/website-directory/internal`
+- Rules require custom claim `admin: true` for create/update/delete
+- Docs: `docs/WEBSITE_DIRECTORY_ADMIN.md`
+
 ### University Detection
 
 Edit `LocationDetector.tsx` to add more universities:

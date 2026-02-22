@@ -41,10 +41,6 @@ export default function HomeEntryGrid() {
     id: slugify(label),
     label,
   }));
-  const exploreSectionHeader =
-    chapterConfig?.exploreSectionHeader ?? "What BEAM studies here";
-  const exploreNodes = chapterConfig?.exploreNodes ?? [];
-
   const clearCinematicTimeout = useCallback(() => {
     if (cinematicTimeoutRef.current !== null) {
       clearTimeout(cinematicTimeoutRef.current);
@@ -141,6 +137,7 @@ export default function HomeEntryGrid() {
 
   const navButtonLook =
     "pointer-events-auto text-[10px] uppercase tracking-[0.3em] text-white/60 transition hover:text-white/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0e0e0e]";
+  const navButtonDisabledLook = "cursor-not-allowed opacity-40 hover:text-white/60";
 
   return (
     <motion.div
@@ -185,8 +182,6 @@ export default function HomeEntryGrid() {
 
       <ExploreOverlay
         isActive={isActive}
-        sectionHeader={exploreSectionHeader}
-        exploreNodes={exploreNodes}
         reducedMotion={reducedMotion}
       />
 
@@ -196,34 +191,34 @@ export default function HomeEntryGrid() {
             Hold to explore
           </span>
         )}
-        {hasMultipleVideos && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              goToPrev();
-            }}
-            className={navButtonLook}
-            aria-label="Previous video"
-          >
-            Previous
-          </button>
-        )}
-      </div>
-
-      {hasMultipleVideos && (
         <button
           type="button"
+          disabled={!hasMultipleVideos}
           onClick={(e) => {
             e.stopPropagation();
-            goToNext();
+            if (!hasMultipleVideos) return;
+            goToPrev();
           }}
-          className={`${navButtonLook} absolute bottom-4 right-4`}
-          aria-label="Next video"
+          className={`${navButtonLook} ${!hasMultipleVideos ? navButtonDisabledLook : ""}`}
+          aria-label="Previous video"
         >
-          Next
+          Previous
         </button>
-      )}
+      </div>
+
+      <button
+        type="button"
+        disabled={!hasMultipleVideos}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!hasMultipleVideos) return;
+          goToNext();
+        }}
+        className={`${navButtonLook} absolute bottom-4 right-4 ${!hasMultipleVideos ? navButtonDisabledLook : ""}`}
+        aria-label="Next video"
+      >
+        Next
+      </button>
     </motion.div>
   );
 }

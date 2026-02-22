@@ -4,8 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { getFirebaseApp } from "@/lib/firebaseClient";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { getFirebaseApp, getFirebaseAuth } from "@/lib/firebaseClient";
 import MatchedResults from "./MatchedResults";
 
 const PLACEHOLDERS = [
@@ -70,7 +70,7 @@ export default function HeroGateway() {
     
     if (!user) {
       try {
-        const auth = getAuth();
+        const auth = getFirebaseAuth();
         const provider = new GoogleAuthProvider();
         await signInWithPopup(auth, provider);
       } catch (e) {

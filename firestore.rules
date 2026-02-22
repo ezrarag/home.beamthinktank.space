@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    function directoryRequiredFieldsPresent(data) {
+      return data.keys().hasAll([
+        'label',
+        'title',
+        'subtitle',
+        'url',
+        'previewImageUrl',
+        'sortOrder',
+        'isActive',
+        'createdAt',
+        'updatedAt',
+        'createdBy',
+        'updatedBy',
+      ]);
+    }
+
+    function directoryOnlyAllowedFields(data) {
+      return data.keys().hasOnly([
+        'label',
+        'title',
+        'subtitle',
+        'url',
+        'previewImageUrl',
+        'sortOrder',
+        'isActive',
+        'createdAt',
+        'updatedAt',
+        'createdBy',
+        'updatedBy',
+      ]);
+    }
+
+    function isValidDirectoryData(data) {
+      return directoryRequiredFieldsPresent(data)
+        && directoryOnlyAllowedFields(data)
+        && data.label is string
+        && data.label.size() > 0
+        && data.title is string
+        && data.title.size() > 0
+        && data.subtitle is string
+        && data.url is string
+        && data.url.size() > 0
+        && data.previewImageUrl is string
+        && data.sortOrder is int
+        && data.isActive is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.createdBy is string
+        && data.updatedBy is string;
+    }
+
+    // User-owned profile and onboarding data.
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Cross-site website directory entries.
+    match /beamWebsiteDirectory/{docId} {
+      allow read: if true;
+      // Development mode: temporarily open writes to unblock dashboard iteration.
+      // Tighten this back to admin-only before production launch.
+      allow create, update: if isValidDirectoryData(request.resource.data);
+      allow delete: if true;
+    }
+  }
+}
