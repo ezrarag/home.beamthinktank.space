@@ -1,0 +1,70 @@
+{
+  "regions": [
+    "Milwaukee",
+    "Madison",
+    "Atlanta",
+    "Orlando",
+    "Remote / Global"
+  ],
+  "sectors": [
+    "Music",
+    "Engineering",
+    "Law",
+    "Medicine",
+    "Business",
+    "Real Estate",
+    "Media",
+    "Education"
+  ],
+  "actionTypes": [
+    "Meeting",
+    "Deliverable",
+    "Outreach",
+    "Site Visit",
+    "Program Event",
+    "Rehearsal / Performance",
+    "Client Work",
+    "Partnership",
+    "Funding / Grant",
+    "Maintenance / Ops"
+  ],
+  "commitmentTypes": [
+    "1 hr/week",
+    "5 hr/week",
+    "Project-based",
+    "Paid",
+    "Research credit",
+    "Equity contribution"
+  ],
+  "roleTags": [
+    "project-manager",
+    "operations",
+    "facilities",
+    "architect",
+    "engineer",
+    "audio-engineer",
+    "music-director",
+    "violin",
+    "viola",
+    "cello",
+    "percussion",
+    "web-design",
+    "frontend",
+    "backend",
+    "legal",
+    "grant-writing",
+    "finance",
+    "community-outreach",
+    "content-media",
+    "research"
+  ],
+  "assetAcquisitionStages": [
+    "SIGNAL",
+    "CLAIM",
+    "ACCESS",
+    "STABILIZE",
+    "ACTIVATE",
+    "SECURE",
+    "TRANSFER"
+  ]
+}

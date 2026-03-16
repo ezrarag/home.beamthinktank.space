@@ -1,0 +1,75 @@
+[
+  {
+    "id": "act_mke_001",
+    "regionId": "milwaukee",
+    "projectId": "proj_mke_retrofit",
+    "assetId": "asset_mke_warehouse_01",
+    "actorUserId": "user_admin",
+    "actionType": "Meeting",
+    "timestamp": "2026-02-20T18:15:00Z",
+    "weight": 4,
+    "summaryRaw": "Met with UWM engineering contact to discuss feasibility for a 90-day activation sprint in the vacant warehouse.",
+    "mediaIds": [],
+    "aiSummary": "Milwaukee engineering partners began planning for a 90-day building activation pilot. The meeting established technical feasibility priorities and next-step coordination.",
+    "aiTasks": [
+      {
+        "title": "Draft 90-day activation timeline",
+        "description": "Create week-by-week timeline for pilot operations and public events.",
+        "requiredRoleTags": ["project-manager", "operations"],
+        "commitment": "Project-based"
+      },
+      {
+        "title": "Estimate baseline maintenance budget",
+        "description": "Produce cost estimate for cleaning, utilities, and life-safety basics.",
+        "requiredRoleTags": ["facilities", "finance"],
+        "commitment": "5 hr/week"
+      }
+    ],
+    "aiRolesNeeded": ["project-manager", "facilities", "legal", "grant-writing"],
+    "visibility": "public"
+  },
+  {
+    "id": "act_atl_001",
+    "regionId": "atlanta",
+    "projectId": "proj_atl_music_lab",
+    "actorUserId": "user_admin",
+    "actionType": "Program Event",
+    "timestamp": "2026-02-18T23:00:00Z",
+    "weight": 3,
+    "summaryRaw": "Hosted a community music lab pilot with student facilitators and local artists.",
+    "mediaIds": [],
+    "aiSummary": "Atlanta launched a pilot music lab event connecting students and local artists. The session validated demand for recurring programming.",
+    "aiTasks": [
+      {
+        "title": "Schedule next 3 pilot sessions",
+        "description": "Lock dates, facilitators, and resource needs for the next month.",
+        "requiredRoleTags": ["music-director", "operations"],
+        "commitment": "5 hr/week"
+      }
+    ],
+    "aiRolesNeeded": ["music-director", "community-outreach", "content-media"],
+    "visibility": "public"
+  },
+  {
+    "id": "act_orl_001",
+    "regionId": "orlando",
+    "projectId": "proj_orl_client_studio",
+    "actorUserId": "user_admin",
+    "actionType": "Client Work",
+    "timestamp": "2026-02-21T15:30:00Z",
+    "weight": 5,
+    "summaryRaw": "Completed first paid prototype delivery for external media client.",
+    "mediaIds": [],
+    "aiSummary": "Orlando team delivered the first paid prototype for an external client, establishing near-term revenue credibility. Follow-up scope planning is underway.",
+    "aiTasks": [
+      {
+        "title": "Define phase-two scope",
+        "description": "Write scope, milestones, and budget for continuation contract.",
+        "requiredRoleTags": ["project-manager", "finance"],
+        "commitment": "Project-based"
+      }
+    ],
+    "aiRolesNeeded": ["project-manager", "backend", "content-media"],
+    "visibility": "public"
+  }
+]

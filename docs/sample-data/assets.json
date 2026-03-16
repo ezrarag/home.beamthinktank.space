@@ -1,0 +1,134 @@
+[
+  {
+    "id": "asset_mke_warehouse_01",
+    "name": "Northside Warehouse Arts Hub",
+    "address": "1200 N Example St, Milwaukee, WI",
+    "regionId": "milwaukee",
+    "ownerName": "City of Milwaukee",
+    "acquisitionStage": "ACCESS",
+    "condition": "fair",
+    "operatorNarrative": "Operate as a public-benefit music, workforce, and maker hub with student-led programming.",
+    "primaryUseCases": ["music", "education", "workforce training"],
+    "scores": {
+      "capacity": 58,
+      "impact": 46,
+      "stability": 42,
+      "revenue": 30,
+      "partner": 64
+    },
+    "stageHistory": [
+      {
+        "stage": "SIGNAL",
+        "timestamp": "2026-01-10T16:00:00Z",
+        "note": "Property identified and preliminarily assessed."
+      },
+      {
+        "stage": "CLAIM",
+        "timestamp": "2026-01-28T19:00:00Z",
+        "note": "Operator plan and core team drafted."
+      },
+      {
+        "stage": "ACCESS",
+        "timestamp": "2026-02-19T18:30:00Z",
+        "note": "Received permission for walkthrough and pilot-use discussions."
+      }
+    ],
+    "linkedProjectIds": ["proj_mke_retrofit"],
+    "linkedActionIds": ["act_mke_001"],
+    "createdAt": "2026-01-10T16:00:00Z",
+    "updatedAt": "2026-02-20T18:20:00Z"
+  },
+  {
+    "id": "asset_atl_school_01",
+    "name": "Eastside Learning Annex",
+    "address": "480 Example Ave SE, Atlanta, GA",
+    "regionId": "atlanta",
+    "ownerName": "County Land Bank",
+    "acquisitionStage": "STABILIZE",
+    "condition": "fair",
+    "operatorNarrative": "Activate as an education and media production annex tied to youth and university pathways.",
+    "primaryUseCases": ["education", "media"],
+    "scores": {
+      "capacity": 62,
+      "impact": 55,
+      "stability": 60,
+      "revenue": 38,
+      "partner": 67
+    },
+    "stageHistory": [
+      {
+        "stage": "SIGNAL",
+        "timestamp": "2025-12-18T17:00:00Z",
+        "note": "Property added to BEAM pipeline."
+      },
+      {
+        "stage": "CLAIM",
+        "timestamp": "2026-01-05T15:00:00Z",
+        "note": "Activation plan approved by core team."
+      },
+      {
+        "stage": "ACCESS",
+        "timestamp": "2026-01-20T20:00:00Z",
+        "note": "Temporary-use talks initiated."
+      },
+      {
+        "stage": "STABILIZE",
+        "timestamp": "2026-02-12T21:15:00Z",
+        "note": "Maintenance checklist and risk controls adopted."
+      }
+    ],
+    "linkedProjectIds": ["proj_atl_music_lab"],
+    "linkedActionIds": ["act_atl_001"],
+    "createdAt": "2025-12-18T17:00:00Z",
+    "updatedAt": "2026-02-18T23:05:00Z"
+  },
+  {
+    "id": "asset_orl_office_01",
+    "name": "Downtown Studio Office",
+    "address": "990 Example Blvd, Orlando, FL",
+    "regionId": "orlando",
+    "ownerName": "Private Owner",
+    "acquisitionStage": "ACTIVATE",
+    "condition": "good",
+    "operatorNarrative": "Run as a mixed-use studio and client-services node generating revenue and training placements.",
+    "primaryUseCases": ["media", "business", "music"],
+    "scores": {
+      "capacity": 72,
+      "impact": 58,
+      "stability": 69,
+      "revenue": 63,
+      "partner": 54
+    },
+    "stageHistory": [
+      {
+        "stage": "SIGNAL",
+        "timestamp": "2025-11-30T14:00:00Z",
+        "note": "Initial opportunity sourced."
+      },
+      {
+        "stage": "CLAIM",
+        "timestamp": "2025-12-15T15:30:00Z",
+        "note": "Core operator team assigned."
+      },
+      {
+        "stage": "ACCESS",
+        "timestamp": "2026-01-03T17:30:00Z",
+        "note": "Pilot-use approval received."
+      },
+      {
+        "stage": "STABILIZE",
+        "timestamp": "2026-01-25T19:00:00Z",
+        "note": "Safety, insurance, and maintenance baseline completed."
+      },
+      {
+        "stage": "ACTIVATE",
+        "timestamp": "2026-02-21T15:35:00Z",
+        "note": "Initial client work completed and programming started."
+      }
+    ],
+    "linkedProjectIds": ["proj_orl_client_studio"],
+    "linkedActionIds": ["act_orl_001"],
+    "createdAt": "2025-11-30T14:00:00Z",
+    "updatedAt": "2026-02-21T15:35:00Z"
+  }
+]

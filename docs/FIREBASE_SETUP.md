@@ -11,6 +11,7 @@ NEXT_PUBLIC_FIREBASE_APP_ID=...
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=beam-home.firebasestorage.app
 READYAIMGO_API_BASE_URL=https://www.readyaimgo.biz
 READYAIMGO_CLIENTS_ENDPOINT=/api/clients?limit=1000
+SLACK_ADMIN_WEBHOOK_URL=https://hooks.slack.com/services/...
 # Optional if readyaimgo adds auth:
 # READYAIMGO_API_KEY=...
 ```
@@ -42,6 +43,7 @@ READYAIMGO_CLIENTS_ENDPOINT=/api/clients?limit=1000
 - Set claim with Firebase Admin SDK (example): `setCustomUserClaims(uid, { admin: true })`.
 - Admin UI route: `/admin/website-directory`.
 - Seed default entry from the admin page via **Seed Default Entry**.
+- Slack test route: `/admin` -> **Slack Webhook Test** card.
 
 ## Security Rules
 - Firestore rules file: `firestore.rules`

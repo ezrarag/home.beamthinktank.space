@@ -68,6 +68,28 @@ A minimalist landing page for BEAM that detects visitor location, deduces their 
 - Rules require custom claim `admin: true` for create/update/delete
 - Docs: `docs/WEBSITE_DIRECTORY_ADMIN.md`
 
+### Published Roles Feed (Readyaimgo -> BEAM Home)
+
+1. Copy `.env.local.example` to `.env.local`.
+2. Set:
+   - `READYAIMGO_BEAM_ROLES_URL`
+   - `READYAIMGO_BEAM_API_KEY` (server-only, no `NEXT_PUBLIC_` prefix)
+3. For Vercel later, add the same keys in Project Settings -> Environment Variables.
+
+### Admin Slack Webhook
+
+- Set `SLACK_ADMIN_WEBHOOK_URL` in `.env.local` (server-only).
+- In `/admin`, use **Slack Webhook Test** to send a test message from the admin portal.
+
+### Sky + Map Entry Setup
+
+- Setup doc: `docs/SKY_MAP_SETUP.md`
+- New public variables:
+  - `NEXT_PUBLIC_MAPBOX_TOKEN`
+  - `NEXT_PUBLIC_BEAM_SKY_STAR_COUNT`
+  - `NEXT_PUBLIC_BEAM_SKY_DRAG_SENSITIVITY`
+  - `NEXT_PUBLIC_BEAM_SKY_PITCH_LIMIT_DEG`
+
 ### University Detection
 
 Edit `LocationDetector.tsx` to add more universities:

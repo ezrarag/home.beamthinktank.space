@@ -1,20 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import AuthBootstrapper from "@/components/AuthBootstrapper";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["300", "400", "500", "600", "700"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "BEAM - Think Tank Home",
@@ -28,9 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark" data-theme="dark">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#141414] text-system-text`}
-      >
+      <body className="antialiased bg-[#141414] text-system-text">
         <AuthBootstrapper />
         <div className="min-h-screen w-full min-w-full bg-[#141414]">{children}</div>
       </body>

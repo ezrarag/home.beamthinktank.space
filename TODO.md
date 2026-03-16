@@ -61,6 +61,16 @@
 ## 🎯 Current Focus
 **Fix engineering video playback issue** - This is blocking the core functionality.
 
+## Sky + Map Entry (New)
+- [x] Replace homepage with `BeamEntryExperience` (Sky/Map dual mode)
+- [x] Keep direct navigation to `/admin` and `/admin/action-logger`
+- [x] Shared city bottom sheet and RolesDrawer integration
+- [x] iOS motion permission flow in Sky mode
+- [ ] Install `@react-three/fiber` + `@react-three/drei` + `mapbox-gl` (blocked by network access in current environment)
+- [ ] Swap fallback map renderer to real Mapbox GL
+- [ ] Swap fallback sky canvas to react-three-fiber implementation
+- [x] Add setup instructions and env variable checklist in `docs/SKY_MAP_SETUP.md`
+
 ## 📝 Notes
 - All Firebase calls are currently stubbed with safe fallbacks
 - Video URLs point to Firebase Storage (may need authentication)

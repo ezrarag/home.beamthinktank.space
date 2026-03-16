@@ -9,6 +9,7 @@ import ChapterCinematicOverlay, {
   slugify,
 } from "@/components/ChapterCinematicOverlay";
 import ExploreOverlay from "@/components/ExploreOverlay";
+import RolesDrawer from "@/components/RolesDrawer";
 
 function capitalizeLabel(label: string): string {
   if (!label.length) return label;
@@ -25,6 +26,12 @@ export default function HomeEntryGrid() {
   const [isActive, setIsActive] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [rolesDrawerOpen, setRolesDrawerOpen] = useState(false);
+  const [rolesFilter, setRolesFilter] = useState<{
+    chapterId?: string;
+    nodeId?: string;
+    city?: string;
+  }>({});
   const cinematicTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
@@ -129,8 +136,12 @@ export default function HomeEntryGrid() {
   const handleCinematicNodeClick = useCallback(
     (nodeId: string) => {
       cancelCinematicAutoFade();
-      // TODO: implement node -> route mapping
-      console.log({ chapter: entry?.id, nodeId });
+      setRolesFilter({
+        chapterId: entry?.id,
+        nodeId,
+        city: undefined,
+      });
+      setRolesDrawerOpen(true);
     },
     [cancelCinematicAutoFade, entry?.id]
   );
@@ -183,6 +194,11 @@ export default function HomeEntryGrid() {
       <ExploreOverlay
         isActive={isActive}
         reducedMotion={reducedMotion}
+      />
+      <RolesDrawer
+        open={rolesDrawerOpen}
+        onClose={() => setRolesDrawerOpen(false)}
+        filter={rolesFilter}
       />
 
       <div className="absolute bottom-4 left-4 flex flex-col gap-1.5">

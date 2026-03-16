@@ -48,6 +48,12 @@ function getFirebaseConfig(config?: Partial<FirebaseConfig>): FirebaseConfig {
 export function getFirebaseApp(config?: Partial<FirebaseConfig>): FirebaseApp {
   if (getApps().length) return getApps()[0]!;
   const firebaseConfig = getFirebaseConfig(config);
+  console.log('FIREBASE ENV', {
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    hasApiKey: Boolean(process.env.NEXT_PUBLIC_FIREBASE_API_KEY),
+  });
   app = initializeApp(firebaseConfig);
   return app;
 }
