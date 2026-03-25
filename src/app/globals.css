@@ -1,37 +1,39 @@
 @import "tailwindcss";
 
-/* Apple HIG + Material 3 Design System */
 :root {
-  /* Light mode colors (for future use) */
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-/* Dark mode colors (Apple HIG inspired) */
-:root.dark,
-[data-theme="dark"] {
-  --background: hsl(0 0% 8%);
-  --foreground: hsl(0 0% 95%);
-  --background-secondary: hsl(0 0% 12%);
-  --background-tertiary: hsl(0 0% 16%);
-  --surface: hsl(0 0% 14%);
-  --surface-secondary: hsl(0 0% 18%);
-  --surface-tertiary: hsl(0 0% 22%);
-  --border: hsl(0 0% 24%);
-  --border-secondary: hsl(0 0% 28%);
-  --text-primary: hsl(0 0% 95%);
-  --text-secondary: hsl(0 0% 70%);
-  --text-tertiary: hsl(0 0% 50%);
+  --beam-bg-base: #080808;
+  --beam-bg-elevated: #0c0c08;
+  --beam-bg-subtle: #0f0f09;
+  --beam-border: #1a1a12;
+  --beam-border-dim: #111108;
+  --beam-text-primary: #f0ead6;
+  --beam-text-secondary: #8a8070;
+  --beam-text-dim: #5a5448;
+  --beam-text-muted: #3a3428;
+  --beam-gold: #c8b97a;
+  --beam-gold-bright: #f0e0a0;
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-mono: "DM Mono", "Courier New", monospace;
+  --font-body: "DM Sans", system-ui, sans-serif;
+  --background: var(--beam-bg-base);
+  --foreground: var(--beam-text-primary);
+  --surface: color-mix(in srgb, var(--beam-bg-elevated) 88%, black 12%);
+  --surface-secondary: color-mix(in srgb, var(--beam-bg-subtle) 92%, black 8%);
+  --surface-tertiary: color-mix(in srgb, var(--beam-bg-subtle) 80%, var(--beam-gold) 20%);
+  --border: var(--beam-border);
+  --border-secondary: color-mix(in srgb, var(--beam-border) 72%, var(--beam-gold) 28%);
+  --text-primary: var(--beam-text-primary);
+  --text-secondary: var(--beam-text-secondary);
+  --text-tertiary: var(--beam-text-dim);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-mono);
 }
 
-/* Base styles following Apple HIG principles */
 * {
   box-sizing: border-box;
 }
@@ -45,9 +47,12 @@ html {
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at top, rgba(200, 185, 122, 0.08), transparent 30%),
+    radial-gradient(circle at 20% 20%, rgba(240, 224, 160, 0.04), transparent 24%),
+    linear-gradient(180deg, #050505 0%, #090907 38%, #080808 100%);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   line-height: 1.5;
   margin: 0;
@@ -58,7 +63,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Apple HIG typography improvements */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   line-height: 1.2;
@@ -71,25 +75,21 @@ p {
   line-height: 1.6;
 }
 
-/* Focus styles following accessibility guidelines */
 :focus-visible {
-  outline: 2px solid #23262B; /* Subtle outline to match chat window border */
+  outline: 2px solid color-mix(in srgb, var(--beam-gold) 78%, white 22%);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* Smooth scrolling */
 html {
   scroll-behavior: smooth;
 }
 
-/* Selection styles */
 ::selection {
-  background-color: rgba(0, 122, 255, 0.3);
-  color: inherit;
+  background-color: rgba(200, 185, 122, 0.26);
+  color: var(--beam-text-primary);
 }
 
-/* Scrollbar styling for webkit browsers */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -105,21 +105,116 @@ html {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(240, 234, 214, 0.32);
 }
 
-/* Utility classes for common patterns */
 .surface-elevation-1 {
   background: var(--surface);
-  box-shadow: var(--apple-shadow-1);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
 }
 
 .surface-elevation-2 {
   background: var(--surface-secondary);
-  box-shadow: var(--apple-shadow-2);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
 }
 
 .surface-elevation-3 {
   background: var(--surface-tertiary);
-  box-shadow: var(--apple-shadow-3);
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.38);
+}
+
+.beam-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.beam-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--beam-text-secondary);
+}
+
+.beam-card {
+  border: 1px solid color-mix(in srgb, var(--beam-border) 68%, var(--beam-gold) 32%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.01) 100%),
+    linear-gradient(180deg, rgba(12, 12, 8, 0.96) 0%, rgba(8, 8, 8, 0.96) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 24px 80px rgba(0, 0, 0, 0.34);
+}
+
+.beam-grid {
+  background-image:
+    linear-gradient(to right, rgba(240, 234, 214, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(240, 234, 214, 0.05) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+.beam-section-anchor {
+  scroll-margin-top: 6rem;
+}
+
+.beam-fade-up {
+  opacity: 0;
+  animation: fadeUp 0.7s ease both;
+}
+
+.beam-node-active::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-radius: 9999px;
+  border: 1px solid rgba(240, 224, 160, 0.4);
+  animation: pulse 2.2s ease-in-out infinite;
+}
+
+.beam-ticker-track {
+  animation: ticker 28s linear infinite;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .beam-fade-up,
+  .beam-node-active::after,
+  .beam-ticker-track {
+    animation: none;
+  }
 }

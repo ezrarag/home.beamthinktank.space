@@ -1,15 +1,106 @@
 "use client";
 
+import Link from "next/link";
 import type { BeamHotspot } from "@/constants/beamHotspots";
+import type { BeamNode } from "@/lib/server/firestoreNodes";
 
 interface CitySheetProps {
-  hotspot: BeamHotspot | null;
-  onExploreRoles: () => void;
-  onSetRegion: () => void;
-  onClose: () => void;
+  hotspot?: BeamHotspot | null;
+  node?: BeamNode | null;
+  onExploreRoles?: () => void;
+  onSetRegion?: () => void;
+  onClose?: () => void;
+  variant?: "entry" | "public";
 }
 
-export default function CitySheet({ hotspot, onExploreRoles, onSetRegion, onClose }: CitySheetProps) {
+function getPublicStatusLabel(status: BeamHotspot["status"] | BeamNode["status"]) {
+  if (status === "active") return "Active";
+  if (status === "activating") return "Incoming";
+  if (status === "forming") return "Forming";
+  if (status === "established") return "Established";
+  return "Identified";
+}
+
+export default function CitySheet({
+  hotspot,
+  node,
+  onExploreRoles,
+  onSetRegion,
+  onClose,
+  variant = "entry",
+}: CitySheetProps) {
+  const publicNode = node
+    ? {
+        id: node.id,
+        city: node.city,
+        status: node.status,
+        tags: node.focusSectors,
+        summary: node.publicSummary,
+      }
+    : hotspot
+      ? {
+          id: hotspot.regionKey,
+          city: hotspot.city,
+          status: hotspot.status,
+          tags: hotspot.topTags,
+          summary: hotspot.publicSummary,
+        }
+      : null;
+
+  if (variant === "public") {
+    if (!publicNode) return null;
+
+    return (
+      <section
+        aria-label={`${publicNode.city} public node details`}
+        className="beam-card h-full rounded-[28px] p-6 text-[var(--beam-text-primary)]"
+      >
+        <p className="beam-eyebrow">Selected Node</p>
+        <div className="mt-4 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="beam-display text-3xl">{publicNode.city}</h3>
+            <p className="mt-2 text-sm text-[var(--beam-text-secondary)]">
+              {getPublicStatusLabel(publicNode.status)} cohort signal
+            </p>
+          </div>
+          <span className="rounded-full border border-[color:var(--beam-border)] px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-[var(--beam-gold)]">
+            {publicNode.status === "active" || publicNode.status === "established" ? "Live" : "Tracking"}
+          </span>
+        </div>
+
+        <p className="mt-5 max-w-md text-sm leading-6 text-[var(--beam-text-secondary)]">
+          {publicNode.summary || "Public view only surfaces city status and issue tags. Operational roles and action logs stay behind the authenticated member workspace."}
+        </p>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          {publicNode.tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full border border-[color:var(--beam-border)] bg-black/20 px-3 py-1 text-xs uppercase tracking-[0.18em] text-[var(--beam-text-secondary)]"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link
+            href="/onboard/community"
+            className="rounded-full bg-[var(--beam-gold)] px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-black transition hover:bg-[var(--beam-gold-bright)]"
+          >
+            Find Your Region
+          </Link>
+          <Link
+            href={publicNode.id ? `/join?nodeId=${encodeURIComponent(publicNode.id)}` : "/join"}
+            className="rounded-full border border-[color:var(--beam-border)] px-5 py-3 text-xs uppercase tracking-[0.16em] text-[var(--beam-text-primary)] transition hover:border-[var(--beam-gold)] hover:text-[var(--beam-gold-bright)]"
+          >
+            Apply to Join
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
   if (!hotspot) return null;
 
   return (
@@ -47,6 +138,7 @@ export default function CitySheet({ hotspot, onExploreRoles, onSetRegion, onClos
         <button
           type="button"
           onClick={onExploreRoles}
+          disabled={!onExploreRoles}
           className="rounded-lg bg-[#89C0D0] px-4 py-2 text-sm font-semibold text-[#0a1318] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
         >
           Explore roles
@@ -54,6 +146,7 @@ export default function CitySheet({ hotspot, onExploreRoles, onSetRegion, onClos
         <button
           type="button"
           onClick={onSetRegion}
+          disabled={!onSetRegion}
           className="rounded-lg border border-white/25 px-4 py-2 text-sm text-white/85 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
         >
           Set as my region

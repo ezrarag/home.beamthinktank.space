@@ -38,6 +38,8 @@
 6. Respect `source` to label rows/cards (`internal` vs `external`) where relevant.
 
 ## Preview Images (Microlink)
-- External readyaimgo entries use Microlink screenshot URLs derived from each site URL.
+- External readyaimgo entries are derived from the BEAM organizations export as one canonical site per organization.
+- `deployHosts` and `vercelProjectDomains` are treated as advisory sync metadata for admin visibility, not as separate directory rows.
+- External readyaimgo entries use Microlink screenshot URLs derived from the canonical site URL.
 - Internal entries follow the same pattern when `previewImageUrl` is blank.
 - Admin form allows an optional `previewImageUrl` override; otherwise Microlink URL is auto-generated.

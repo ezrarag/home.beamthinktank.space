@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { fetchReadyaimgoDirectoryEntries } from "@/lib/server/readyaimgoDirectory";
-import { buildMicrolinkPreviewUrl, WEBSITE_DIRECTORY_COLLECTION, type WebsiteDirectoryEntry } from "@/lib/websiteDirectory";
+import {
+  buildMicrolinkPreviewUrl,
+  dedupeWebsiteDirectoryEntries,
+  WEBSITE_DIRECTORY_COLLECTION,
+  type WebsiteDirectoryEntry,
+} from "@/lib/websiteDirectory";
 
 interface FirestoreDocument {
   name: string;
@@ -80,7 +85,7 @@ export async function GET() {
     externalError = error instanceof Error ? error.message : "Failed to fetch external entries";
   }
 
-  const entries = [...internalEntries, ...externalEntries]
+  const entries = dedupeWebsiteDirectoryEntries([...internalEntries, ...externalEntries])
     .filter((entry) => entry.isActive)
     .sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title));
 

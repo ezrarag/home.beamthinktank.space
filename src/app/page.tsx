@@ -1,5 +1,5 @@
-import BeamEntryExperience from "@/components/BeamEntryExperience";
+import { HomeRouteGate } from "@/components/landing/HomeRouteGate";
 
 export default function HomePage() {
-  return <BeamEntryExperience />;
+  return <HomeRouteGate />;
 }

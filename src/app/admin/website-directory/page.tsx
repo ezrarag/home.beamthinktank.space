@@ -23,6 +23,7 @@ import {
   DEFAULT_WEBSITE_DIRECTORY_SEED,
   WEBSITE_DIRECTORY_COLLECTION,
   buildMicrolinkPreviewUrl,
+  normalizeWebsiteDirectoryHost,
   type WebsiteDirectoryEntry,
   type WebsiteDirectorySource,
 } from "@/lib/websiteDirectory";
@@ -58,6 +59,72 @@ interface ExternalEntriesResponse {
   totalClients?: number;
   skippedInvalidUrl?: number;
   error?: string;
+}
+
+function compareDirectoryRows(a: DirectoryRow, b: DirectoryRow): number {
+  const sourceRank = (entry: DirectoryRow) => (entry.source === "internal" ? 2 : 1);
+  const bySource = sourceRank(b) - sourceRank(a);
+  if (bySource !== 0) return bySource;
+
+  if (a.isActive !== b.isActive) {
+    return a.isActive ? -1 : 1;
+  }
+
+  const bySortOrder = a.sortOrder - b.sortOrder;
+  if (bySortOrder !== 0) return bySortOrder;
+
+  return a.title.localeCompare(b.title);
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values)];
+}
+
+function dedupeDirectoryRows(rows: DirectoryRow[]): DirectoryRow[] {
+  const groups = new Map<string, DirectoryRow[]>();
+
+  for (const row of rows) {
+    const host = normalizeWebsiteDirectoryHost(row.url);
+    const key = host ? `host:${host}` : `id:${row.id}`;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.push(row);
+      continue;
+    }
+    groups.set(key, [row]);
+  }
+
+  return [...groups.values()].map((group) => {
+    const winner = [...group].sort(compareDirectoryRows)[0];
+    const mergedAlternateHosts = uniqueStrings(
+      group.flatMap((row) => row.externalMetadata?.alternateHosts ?? [])
+    ).filter((host) => host !== normalizeWebsiteDirectoryHost(winner.url));
+
+    const storyPath =
+      winner.externalMetadata?.storyPath ??
+      group.find((row) => row.externalMetadata?.storyPath)?.externalMetadata?.storyPath;
+
+    if (mergedAlternateHosts.length === 0 && !storyPath) {
+      return winner;
+    }
+
+    return {
+      ...winner,
+      externalMetadata: {
+        canonicalHost: winner.externalMetadata?.canonicalHost ?? normalizeWebsiteDirectoryHost(winner.url) ?? undefined,
+        alternateHosts: mergedAlternateHosts,
+        storyPath,
+      },
+    };
+  });
+}
+
+function getExternalMetadata(entry: DirectoryRow) {
+  return entry.externalMetadata;
+}
+
+function getSourceBadgeLabel(entry: DirectoryRow): string {
+  return entry.source === "internal" ? "managed" : "synced";
 }
 
 function isValidAbsoluteHttpUrl(value: string): boolean {
@@ -192,13 +259,15 @@ export default function WebsiteDirectoryAdminPage() {
   }
 
   const sortedRows = useMemo(() => {
-    const merged = [...internalRows, ...externalRows];
+    const merged = dedupeDirectoryRows([...internalRows, ...externalRows]);
     return merged.sort((a, b) => {
       const byOrder = a.sortOrder - b.sortOrder;
       if (byOrder !== 0) return byOrder;
       return a.title.localeCompare(b.title);
     });
   }, [internalRows, externalRows]);
+
+  const hiddenDuplicateCount = internalRows.length + externalRows.length - sortedRows.length;
 
   async function loadRows() {
     setIsLoadingRows(true);
@@ -496,7 +565,7 @@ export default function WebsiteDirectoryAdminPage() {
           <div>
             <h1 className="text-3xl font-semibold">Website Directory</h1>
             <p className="text-sm text-neutral-300">
-              Internal entries come from Firestore. External entries are pulled from readyaimgo and shown as read-only.
+              Internal entries come from Firestore. External BEAM sites are pulled as one canonical entry per Readyaimgo org, with extra deploy hosts shown as sync metadata instead of duplicate rows.
             </p>
           </div>
           <div className="flex gap-2">
@@ -620,9 +689,14 @@ export default function WebsiteDirectoryAdminPage() {
         <section className="rounded-xl border border-[#2b2f36] bg-[#161920] p-5">
           <h2 className="text-lg font-medium mb-4">Entries (Internal + External)</h2>
           <p className="mb-3 text-xs text-neutral-400">
-            External sync: {externalRows.length} mapped of {externalTotalClients} client records
-            {externalSkippedInvalidUrl > 0 ? ` (${externalSkippedInvalidUrl} skipped: missing/invalid website URL)` : ""}.
+            External sync: {externalRows.length} canonical entries mapped from {externalTotalClients} readyaimgo records
+            {externalSkippedInvalidUrl > 0 ? ` (${externalSkippedInvalidUrl} without a canonical beamthinktank.space site)` : ""}.
           </p>
+          {hiddenDuplicateCount > 0 ? (
+            <p className="mb-3 text-xs text-neutral-500">
+              Showing {sortedRows.length} unique BEAM sites after collapsing {hiddenDuplicateCount} duplicate host matches.
+            </p>
+          ) : null}
           {isLoadingRows ? (
             <p className="text-sm text-neutral-300">Loading entries...</p>
           ) : sortedRows.length === 0 ? (
@@ -635,7 +709,7 @@ export default function WebsiteDirectoryAdminPage() {
                     <th className="py-2 pr-3">Source</th>
                     <th className="py-2 pr-3">Order</th>
                     <th className="py-2 pr-3">Label</th>
-                    <th className="py-2 pr-3">Title</th>
+                    <th className="py-2 pr-3">Entry</th>
                     <th className="py-2 pr-3">Preview</th>
                     <th className="py-2 pr-3">URL</th>
                     <th className="py-2 pr-3">Active</th>
@@ -654,12 +728,17 @@ export default function WebsiteDirectoryAdminPage() {
                               : "border-[#e6b17e]/50 text-[#e6b17e]"
                           }`}
                         >
-                          {entry.source}
+                          {getSourceBadgeLabel(entry)}
                         </span>
                       </td>
                       <td className="py-2 pr-3">{entry.sortOrder}</td>
                       <td className="py-2 pr-3">{entry.label}</td>
-                      <td className="py-2 pr-3">{entry.title}</td>
+                      <td className="py-2 pr-3">
+                        <div className="min-w-[14rem]">
+                          <div>{entry.title}</div>
+                          {entry.subtitle ? <div className="mt-1 text-xs text-neutral-400">{entry.subtitle}</div> : null}
+                        </div>
+                      </td>
                       <td className="py-2 pr-3">
                         {entry.previewImageUrl ? (
                           <a href={entry.previewImageUrl} target="_blank" rel="noreferrer" className="block w-24">
@@ -678,9 +757,16 @@ export default function WebsiteDirectoryAdminPage() {
                         )}
                       </td>
                       <td className="py-2 pr-3">
-                        <a href={entry.url} target="_blank" rel="noreferrer" className="text-[#89C0D0] hover:underline">
-                          {entry.url}
-                        </a>
+                        <div className="min-w-[16rem]">
+                          <a href={entry.url} target="_blank" rel="noreferrer" className="text-[#89C0D0] hover:underline break-all">
+                            {entry.url}
+                          </a>
+                          {getExternalMetadata(entry)?.alternateHosts?.length ? (
+                            <div className="mt-1 text-xs text-neutral-400">
+                              Synced hosts: {getExternalMetadata(entry)?.alternateHosts?.join(", ")}
+                            </div>
+                          ) : null}
+                        </div>
                       </td>
                       <td className="py-2 pr-3">{entry.isActive ? "Yes" : "No"}</td>
                       <td className="py-2 pr-3">{entry.updatedBy || "n/a"}</td>
@@ -710,7 +796,7 @@ export default function WebsiteDirectoryAdminPage() {
                             </button>
                           </div>
                         ) : (
-                          <span className="text-xs text-neutral-400">Managed by readyaimgo API</span>
+                          <span className="text-xs text-neutral-400">Read-only ReadyAimGo sync entry</span>
                         )}
                       </td>
                     </tr>

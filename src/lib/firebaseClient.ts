@@ -9,6 +9,7 @@ export interface FirebaseConfig {
   projectId: string;
   appId: string;
   storageBucket: string;
+  messagingSenderId?: string;
 }
 
 let app: FirebaseApp | null = null;
@@ -22,6 +23,7 @@ const PUBLIC_FIREBASE_ENV = {
   NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
 } as const;
 
 type FirebaseEnvName = keyof typeof PUBLIC_FIREBASE_ENV;
@@ -41,6 +43,7 @@ function getFirebaseConfig(config?: Partial<FirebaseConfig>): FirebaseConfig {
     projectId: getRequiredEnv('NEXT_PUBLIC_FIREBASE_PROJECT_ID'),
     appId: getRequiredEnv('NEXT_PUBLIC_FIREBASE_APP_ID'),
     storageBucket: getRequiredEnv('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'),
+    messagingSenderId: PUBLIC_FIREBASE_ENV.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     ...config,
   };
 }

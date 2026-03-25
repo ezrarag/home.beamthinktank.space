@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { getAdminUserByEmail, type AdminUserRecord } from "@/lib/server/adminUsers";
 
 interface IdentityUser {
   localId: string;
@@ -17,6 +18,7 @@ export interface AdminUserIdentity {
   uid: string;
   email: string | null;
   idToken: string;
+  adminUser: AdminUserRecord | null;
 }
 
 function decodeJwtPayload<T>(token: string): T | null {
@@ -70,13 +72,18 @@ export async function requireAdminIdentity(request: NextRequest): Promise<AdminU
 
   const claims = decodeJwtPayload<FirebaseTokenClaims>(idToken);
   const allowDevBypass = process.env.NODE_ENV !== "production";
-  if (!allowDevBypass && claims?.admin !== true) {
-    throw new Error("Admin privileges are required");
+  const adminUser = verifiedUser.email ? await getAdminUserByEmail(verifiedUser.email, idToken) : null;
+
+  if (!adminUser?.active) {
+    if (!allowDevBypass && claims?.admin !== true) {
+      throw new Error("Active admin user record is required");
+    }
   }
 
   return {
     uid: verifiedUser.localId,
     email: verifiedUser.email ?? null,
     idToken,
+    adminUser,
   };
 }

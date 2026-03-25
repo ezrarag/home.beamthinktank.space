@@ -10,9 +10,13 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=beam-home
 NEXT_PUBLIC_FIREBASE_APP_ID=...
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=beam-home.firebasestorage.app
 READYAIMGO_API_BASE_URL=https://www.readyaimgo.biz
+READYAIMGO_BEAM_ORGANIZATIONS_ENDPOINT=/api/beam/organizations
+READYAIMGO_BEAM_PARTICIPANT_CONTEXTS_URL=
+READYAIMGO_BEAM_PARTICIPANT_CONTEXTS_ENDPOINT=/api/beam/participant-contexts
 READYAIMGO_CLIENTS_ENDPOINT=/api/clients?limit=1000
+READYAIMGO_BEAM_API_KEY=changeme
 SLACK_ADMIN_WEBHOOK_URL=https://hooks.slack.com/services/...
-# Optional if readyaimgo adds auth:
+# Optional fallback if legacy readyaimgo clients feed adds auth:
 # READYAIMGO_API_KEY=...
 ```
 

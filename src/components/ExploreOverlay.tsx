@@ -68,6 +68,12 @@ export default function ExploreOverlay({
               >
                 Participant dashboard
               </Link>
+              <Link
+                href="/onboard/handoff?preset=paynepros-business"
+                className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/80 transition hover:border-white/40 hover:text-white"
+              >
+                Handoff tester
+              </Link>
             </div>
           </div>
         </motion.div>

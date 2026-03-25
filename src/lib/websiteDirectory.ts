@@ -1,6 +1,12 @@
 export const WEBSITE_DIRECTORY_COLLECTION = "beamWebsiteDirectory";
 export type WebsiteDirectorySource = "internal" | "external";
 
+export interface WebsiteDirectoryExternalMetadata {
+  canonicalHost?: string;
+  alternateHosts?: string[];
+  storyPath?: string;
+}
+
 export interface WebsiteDirectoryEntry {
   id: string;
   label: string;
@@ -13,6 +19,7 @@ export interface WebsiteDirectoryEntry {
   createdBy: string;
   updatedBy: string;
   source?: WebsiteDirectorySource;
+  externalMetadata?: WebsiteDirectoryExternalMetadata;
 }
 
 export interface WebsiteDirectoryInput {
@@ -72,6 +79,56 @@ export function buildMicrolinkPreviewUrl(websiteUrl: string): string {
   endpoint.searchParams.set("viewport.width", "1920");
   endpoint.searchParams.set("viewport.height", "1080");
   return endpoint.toString();
+}
+
+export function normalizeWebsiteDirectoryHost(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const candidates = trimmed.includes("://") ? [trimmed] : [`https://${trimmed}`];
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = new URL(candidate);
+      const host = parsed.hostname.trim().toLowerCase().replace(/\.+$/, "");
+      if (host) return host;
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+function compareWebsiteDirectoryEntries(a: WebsiteDirectoryEntry, b: WebsiteDirectoryEntry): number {
+  const sourceRank = (entry: WebsiteDirectoryEntry) => (entry.source === "internal" ? 2 : 1);
+  const bySource = sourceRank(b) - sourceRank(a);
+  if (bySource !== 0) return bySource;
+
+  if (a.isActive !== b.isActive) {
+    return a.isActive ? -1 : 1;
+  }
+
+  const bySortOrder = a.sortOrder - b.sortOrder;
+  if (bySortOrder !== 0) return bySortOrder;
+
+  return a.title.localeCompare(b.title);
+}
+
+export function dedupeWebsiteDirectoryEntries(entries: WebsiteDirectoryEntry[]): WebsiteDirectoryEntry[] {
+  const byKey = new Map<string, WebsiteDirectoryEntry>();
+
+  for (const entry of entries) {
+    const host = normalizeWebsiteDirectoryHost(entry.url);
+    const key = host ? `host:${host}` : `id:${entry.id}`;
+    const existing = byKey.get(key);
+
+    if (!existing || compareWebsiteDirectoryEntries(entry, existing) < 0) {
+      byKey.set(key, entry);
+    }
+  }
+
+  return [...byKey.values()];
 }
 
 export function resolvePreviewImageUrl(url: string, previewImageUrl?: string): string {

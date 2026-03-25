@@ -75,6 +75,28 @@ service cloud.firestore {
       allow delete: if true;
     }
 
+    match /nodes/{docId} {
+      allow read: if resource.data.publiclyVisible == true || isSignedIn();
+      allow create, update, delete: if isSignedIn();
+    }
+
+    match /intake/{docId} {
+      allow create: if request.resource.data.keys().hasAll([
+          'orgName',
+          'orgUrl',
+          'nodeId',
+          'sectors',
+          'contactName',
+          'contactEmail',
+          'needs',
+          'offers',
+          'description',
+          'submittedAt',
+          'status'
+        ]);
+      allow read, update, delete: if isSignedIn();
+    }
+
     // BEAM game engine collections (Phase 1).
     // Development mode: keep reads open and writes permissive for active admin iteration.
     // Tighten this to admin-only before production launch.
@@ -101,6 +123,37 @@ service cloud.firestore {
     match /beamAssets/{docId} {
       allow read: if true;
       allow create, update, delete: if true;
+    }
+
+    // Canonical participant identity and membership layer.
+    match /organizations/{docId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    match /cohorts/{docId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    match /participantProfiles/{docId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    match /organizationMemberships/{docId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    match /cohortMemberships/{docId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    match /participantSourceAttribution/{docId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    match /ragAllowlist/{docId} {
+      allow get: if isSignedIn() && resource.data.email == request.auth.token.email;
+      allow list: if false;
+      allow create, update, delete: if isAdmin();
     }
   }
 }

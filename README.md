@@ -65,16 +65,22 @@ A minimalist landing page for BEAM that detects visitor location, deduces their 
 - Firestore collection: `beamWebsiteDirectory`
 - Public merged API (internal + readyaimgo): `/api/website-directory`
 - Public internal-only API: `/api/website-directory/internal`
+- External BEAM sites are pulled from Readyaimgo's BEAM organizations export and Vercel-linked `beamthinktank.space` domains.
 - Rules require custom claim `admin: true` for create/update/delete
 - Docs: `docs/WEBSITE_DIRECTORY_ADMIN.md`
 
-### Published Roles Feed (Readyaimgo -> BEAM Home)
+### Readyaimgo Feeds (Readyaimgo -> BEAM Home)
 
 1. Copy `.env.local.example` to `.env.local`.
 2. Set:
+   - `READYAIMGO_API_BASE_URL`
+   - `READYAIMGO_BEAM_ORGANIZATIONS_ENDPOINT` (optional override)
+   - `READYAIMGO_BEAM_PARTICIPANT_CONTEXTS_URL` or `READYAIMGO_BEAM_PARTICIPANT_CONTEXTS_ENDPOINT`
    - `READYAIMGO_BEAM_ROLES_URL`
    - `READYAIMGO_BEAM_API_KEY` (server-only, no `NEXT_PUBLIC_` prefix)
-3. For Vercel later, add the same keys in Project Settings -> Environment Variables.
+3. Use `/onboard/handoff` to test a BEAM-side sign-in/handoff flow with your own Google profile.
+   Include `sourceDocumentId` and/or `sourceStoryId` on Readyaimgo-origin handoffs when available so BEAM can use the narrower deterministic participant-context export instead of falling back to legacy matching.
+4. For Vercel later, add the same keys in Project Settings -> Environment Variables.
 
 ### Admin Slack Webhook
 
