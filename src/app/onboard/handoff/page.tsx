@@ -120,6 +120,16 @@ function BeamHandoffPageContent() {
     [form.presetId]
   );
   const autoHandoffReady = useMemo(() => hasAutoHandoffContext(form), [form]);
+  const isNgoHandoff = useMemo(() => {
+    return (
+      searchParams.get("sourceType") === "ngo_site" &&
+      Boolean(searchParams.get("organizationId")?.trim()) &&
+      Boolean(searchParams.get("organizationName")?.trim()) &&
+      Boolean(searchParams.get("entryChannel")?.trim()) &&
+      Boolean(searchParams.get("landingPageUrl")?.trim())
+    );
+  }, [searchParams]);
+  const ngoNameFromSearch = useMemo(() => searchParams.get("organizationName")?.trim() || "", [searchParams]);
 
   function updateField<Key extends keyof BeamHandoffFormState>(key: Key, value: BeamHandoffFormState[Key]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -257,35 +267,39 @@ function BeamHandoffPageContent() {
 
   return (
     <main className="min-h-screen bg-[#0b0d10] px-4 py-10 text-slate-200">
-      {autoHandoffReady ? (
+      {isNgoHandoff ? (
         <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-3xl items-center justify-center">
           <section className="w-full rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur sm:p-10">
             <p className="text-xs uppercase tracking-[0.32em] text-slate-500">BEAM Entry</p>
-            <h1 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">{form.organizationName.trim()}</h1>
+            <h1 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">{ngoNameFromSearch}</h1>
             <p className="mt-4 text-base text-slate-300 sm:text-lg">
-              Joining {form.organizationName.trim()} through BEAM.
+              Joining {ngoNameFromSearch} through BEAM.
             </p>
             <p className="mt-3 text-sm text-slate-400">
-              Continue with Google to connect your account and finish the handoff.
+              {user?.uid
+                ? "Completing your handoff..."
+                : "Continue with Google to connect your account and finish the handoff."}
             </p>
 
             {error ? <p className="mt-6 text-sm text-red-300">{error}</p> : null}
-            {autoHandoffReady && error ? (
+            {isNgoHandoff && error ? (
               <p className="mt-2 text-sm text-slate-400">
                 If the browser blocked the popup, use the button below to continue manually.
               </p>
             ) : null}
 
-            <div className="mt-8 flex justify-center">
-              <button
-                type="button"
-                onClick={() => void handleContinue()}
-                disabled={isSubmitting}
-                className="rounded-full bg-[#91B5FF] px-6 py-3 text-sm font-medium text-[#0c1215] transition hover:brightness-95 disabled:opacity-60"
-              >
-                {isSubmitting ? "Saving..." : "Sign in with Google"}
-              </button>
-            </div>
+            {user?.uid ? null : (
+              <div className="mt-8 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => void handleContinue()}
+                  disabled={isSubmitting}
+                  className="rounded-full bg-[#91B5FF] px-6 py-3 text-sm font-medium text-[#0c1215] transition hover:brightness-95 disabled:opacity-60"
+                >
+                  {isSubmitting ? "Saving..." : "Sign in with Google"}
+                </button>
+              </div>
+            )}
           </section>
         </div>
       ) : (
