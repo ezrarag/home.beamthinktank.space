@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Timestamp, arrayUnion, doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebaseClient";
@@ -386,7 +386,7 @@ async function copyText(text: string): Promise<void> {
   await navigator.clipboard.writeText(text);
 }
 
-export default function CharterIntakePage() {
+function CharterIntakePageContent() {
   const searchParams = useSearchParams();
   const institutionSlug = normalizeInstitutionSlug(searchParams.get("institution"));
   const [charter, setCharter] = useState<BeamCharterDoc>(createEmptyCharterDoc(institutionSlug));
@@ -1159,5 +1159,26 @@ export default function CharterIntakePage() {
         ) : null}
       </div>
     </main>
+  );
+}
+
+function CharterIntakePageFallback() {
+  return (
+    <main className="min-h-screen bg-[var(--beam-bg-base)] px-4 py-6 text-[var(--beam-text-primary)] sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+        <section className="beam-card rounded-[32px] px-6 py-8 sm:px-8">
+          <p className="beam-eyebrow">BEAM Charter Intake</p>
+          <p className="mt-4 text-sm text-[var(--beam-text-secondary)]">Loading charter intake form.</p>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+export default function CharterIntakePage() {
+  return (
+    <Suspense fallback={<CharterIntakePageFallback />}>
+      <CharterIntakePageContent />
+    </Suspense>
   );
 }
