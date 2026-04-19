@@ -61,6 +61,138 @@ service cloud.firestore {
         && data.updatedBy is string;
     }
 
+    function devChecklistRequiredFieldsPresent(data) {
+      return data.keys().hasAll([
+        'items',
+        'lastUpdatedBy',
+        'updatedAt',
+      ]);
+    }
+
+    function devChecklistOnlyAllowedFields(data) {
+      return data.keys().hasOnly([
+        'items',
+        'lastUpdatedBy',
+        'updatedAt',
+      ]);
+    }
+
+    function isValidDevChecklistData(data) {
+      return devChecklistRequiredFieldsPresent(data)
+        && devChecklistOnlyAllowedFields(data)
+        && data.items is list
+        && data.lastUpdatedBy is string
+        && data.updatedAt is timestamp;
+    }
+
+    function beamCharterPublicCreateFieldsOnly(data) {
+      return data.keys().hasOnly([
+        'institutionSlug',
+        'officer1Role',
+        'officer1Name',
+        'officer1Email',
+        'officer1Phone',
+        'officer1Enrolled',
+        'officer1Credits',
+        'officer1StudentId',
+        'officer2Role',
+        'officer2Name',
+        'officer2Email',
+        'officer2Phone',
+        'officer2Enrolled',
+        'officer2Credits',
+        'officer2StudentId',
+        'officer3Role',
+        'officer3Name',
+        'officer3Email',
+        'officer3Phone',
+        'officer3Enrolled',
+        'officer3Credits',
+        'officer3StudentId',
+        'officer4Role',
+        'officer4Name',
+        'officer4Email',
+        'officer4Phone',
+        'officer4Enrolled',
+        'officer4Credits',
+        'officer4StudentId',
+        'advisorName',
+        'advisorTitle',
+        'advisorDepartment',
+        'advisorOfficeLocation',
+        'advisorEmail',
+        'advisorPhone',
+        'advisorSupervisorName',
+        'advisorSupervisorEmail',
+        'divisions',
+        'completionPercent',
+        'createdAt',
+        'updatedAt',
+      ]);
+    }
+
+    function beamCharterPublicUpdateFieldsOnly(data) {
+      return data.diff(resource.data).changedKeys().hasOnly([
+        'institutionSlug',
+        'officer1Role',
+        'officer1Name',
+        'officer1Email',
+        'officer1Phone',
+        'officer1Enrolled',
+        'officer1Credits',
+        'officer1StudentId',
+        'officer2Role',
+        'officer2Name',
+        'officer2Email',
+        'officer2Phone',
+        'officer2Enrolled',
+        'officer2Credits',
+        'officer2StudentId',
+        'officer3Role',
+        'officer3Name',
+        'officer3Email',
+        'officer3Phone',
+        'officer3Enrolled',
+        'officer3Credits',
+        'officer3StudentId',
+        'officer4Role',
+        'officer4Name',
+        'officer4Email',
+        'officer4Phone',
+        'officer4Enrolled',
+        'officer4Credits',
+        'officer4StudentId',
+        'advisorName',
+        'advisorTitle',
+        'advisorDepartment',
+        'advisorOfficeLocation',
+        'advisorEmail',
+        'advisorPhone',
+        'advisorSupervisorName',
+        'advisorSupervisorEmail',
+        'divisions',
+        'completionPercent',
+        'updatedAt',
+      ]);
+    }
+
+    function isValidBeamCharterPublicCreate(slug) {
+      return beamCharterPublicCreateFieldsOnly(request.resource.data)
+        && request.resource.data.updatedAt is timestamp
+        && (!request.resource.data.keys().hasAny(['createdAt']) || request.resource.data.createdAt is timestamp)
+        && (!request.resource.data.keys().hasAny(['completionPercent']) || request.resource.data.completionPercent is int)
+        && (!request.resource.data.keys().hasAny(['divisions']) || request.resource.data.divisions is list)
+        && (!request.resource.data.keys().hasAny(['institutionSlug']) || request.resource.data.institutionSlug == slug);
+    }
+
+    function isValidBeamCharterPublicUpdate(slug) {
+      return beamCharterPublicUpdateFieldsOnly(request.resource.data)
+        && request.resource.data.updatedAt is timestamp
+        && (!request.resource.data.keys().hasAny(['completionPercent']) || request.resource.data.completionPercent is int)
+        && (!request.resource.data.keys().hasAny(['divisions']) || request.resource.data.divisions is list)
+        && (!request.resource.data.keys().hasAny(['institutionSlug']) || request.resource.data.institutionSlug == slug);
+    }
+
     // User-owned profile and onboarding data.
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
@@ -75,9 +207,29 @@ service cloud.firestore {
       allow delete: if true;
     }
 
+    match /devChecklists/{docId} {
+      allow read: if true;
+      allow create, update: if isValidDevChecklistData(request.resource.data);
+      allow delete: if true;
+    }
+
     match /nodes/{docId} {
       allow read: if resource.data.publiclyVisible == true || isSignedIn();
       allow create, update, delete: if isSignedIn();
+    }
+
+    match /beamSubstrate/{docId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    // beamCharters
+    // Public reads are intentional so the shareable intake link can show live completion state.
+    // Unauthenticated intake writes stay limited to participant-safe fields; tighten further if abuse appears.
+    match /beamCharters/{slug} {
+      allow read: if true;
+      allow create: if isSignedIn() || isValidBeamCharterPublicCreate(slug);
+      allow update: if isSignedIn() || isValidBeamCharterPublicUpdate(slug);
+      allow delete: if isSignedIn();
     }
 
     match /intake/{docId} {

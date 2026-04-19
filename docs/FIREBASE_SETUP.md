@@ -42,6 +42,11 @@ SLACK_ADMIN_WEBHOOK_URL=https://hooks.slack.com/services/...
   - `createdBy` (string uid/email)
   - `updatedBy` (string uid/email)
 
+- `devChecklists/{siteSlug}`
+  - `items` (array)
+  - `lastUpdatedBy` (string)
+  - `updatedAt` (server timestamp)
+
 ## Admin Access
 - Website directory writes require Firebase custom claim `admin: true`.
 - Set claim with Firebase Admin SDK (example): `setCustomUserClaims(uid, { admin: true })`.
@@ -67,3 +72,4 @@ firebase deploy --only firestore:rules,storage
 2. Confirm document written to Firestore path:
    - `users/<uid>/profiles/onboarding`
 3. Confirm unauthorized user cannot read/write another user path.
+4. Run `npm run build:extension`, load `extension/beam-devtools` in Chrome, and confirm the extension can read/write `devChecklists/home`.

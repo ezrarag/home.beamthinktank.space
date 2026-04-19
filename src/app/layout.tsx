@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import AuthBootstrapper from "@/components/AuthBootstrapper";
+import BeamDevtoolsBridge from "@/components/BeamDevtoolsBridge";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,7 +23,8 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased">
+      <body suppressHydrationWarning className="antialiased">
+        <BeamDevtoolsBridge />
         <AuthBootstrapper />
         <div className="min-h-screen w-full min-w-full">{children}</div>
       </body>

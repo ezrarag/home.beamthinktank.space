@@ -262,6 +262,13 @@ export default function AdminPortalPage() {
             cta="Open Website Directory"
           />
           <PortalCard
+            eyebrow="Music Infrastructure"
+            title="Venue Inventory"
+            description="Manage shared BEAM music venues, room capabilities, access status, and AR/VR overlay stubs."
+            href="/admin/venues"
+            cta="Open Venue Inventory"
+          />
+          <PortalCard
             eyebrow="Network Operations"
             title="Node Management"
             description="Manage city node stages, public visibility, focus sectors, and activation checklists."
@@ -281,6 +288,20 @@ export default function AdminPortalPage() {
             description="Manage which allowlisted client emails route into the dedicated ReadyAimGo portal."
             href="/admin/clients"
             cta="Open Client Access"
+          />
+          <PortalCard
+            eyebrow="BEAM Operating System"
+            title="Substrate Manager"
+            description="Edit and track hard and soft substrate items. Hard items are built assets; soft items are active relationships and seeded projects. AI assists with drafting outreach and coordination briefs."
+            href="/admin/substrate"
+            cta="Open Substrate Manager"
+          />
+          <PortalCard
+            eyebrow="Institutional Expansion"
+            title="Charter Onboarding"
+            description="Build and track BEAM charter applications for any university. Collect officer and advisor information collaboratively. Export a ready-to-submit summary for PantherOrgs or equivalent systems."
+            href="/admin/charter"
+            cta="Open Charter Manager"
           />
 
           <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">

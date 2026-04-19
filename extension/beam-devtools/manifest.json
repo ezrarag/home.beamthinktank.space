@@ -1,0 +1,51 @@
+{
+  "manifest_version": 3,
+  "name": "BEAM Home DevTools",
+  "version": "1.0.0",
+  "description": "Checklist, page context, Drive folder switching, and dev console for BEAM Home development",
+  "permissions": ["sidePanel", "activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "http://localhost:3001/*",
+    "https://beamthinktank.space/*",
+    "https://home.beamthinktank.space/*",
+    "https://drive.google.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost:3000/*",
+        "http://localhost:3001/*",
+        "https://beamthinktank.space/*",
+        "https://home.beamthinktank.space/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "side_panel": {
+    "default_path": "sidebar/sidebar.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["page-bridge.js"],
+      "matches": [
+        "http://localhost:3000/*",
+        "http://localhost:3001/*",
+        "https://beamthinktank.space/*",
+        "https://home.beamthinktank.space/*"
+      ]
+    }
+  ],
+  "action": {
+    "default_title": "BEAM Home DevTools"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

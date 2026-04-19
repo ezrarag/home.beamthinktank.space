@@ -10,6 +10,7 @@ interface PublicNavProps {
 const NAV_ITEMS = [
   { href: "#research", label: "Research" },
   { href: "#network", label: "Network" },
+  { href: "#ecosystem", label: "Ecosystem" },
   { href: "#about", label: "About" },
   { href: "#data-sources", label: "Data Sources" },
 ];

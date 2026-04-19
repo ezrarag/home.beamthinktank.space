@@ -1,5 +1,5 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
-import { getAuth, type Auth } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
@@ -16,6 +16,16 @@ let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let db: Firestore | null = null;
 let storage: FirebaseStorage | null = null;
+
+type BeamDevtoolsWindow = Window &
+  typeof globalThis & {
+    __BEAM_AUTH_LISTENER_ATTACHED__?: boolean;
+    __BEAM_AUTH_USER__?: {
+      uid: string;
+      email: string | null;
+      displayName: string | null;
+    } | null;
+  };
 
 const PUBLIC_FIREBASE_ENV = {
   NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -48,22 +58,40 @@ function getFirebaseConfig(config?: Partial<FirebaseConfig>): FirebaseConfig {
   };
 }
 
+function attachBeamAuthBridge(nextAuth: Auth): Auth {
+  if (typeof window === 'undefined') return nextAuth;
+
+  const beamWindow = window as BeamDevtoolsWindow;
+
+  if (beamWindow.__BEAM_AUTH_LISTENER_ATTACHED__) {
+    return nextAuth;
+  }
+
+  beamWindow.__BEAM_AUTH_LISTENER_ATTACHED__ = true;
+
+  onAuthStateChanged(nextAuth, (user) => {
+    beamWindow.__BEAM_AUTH_USER__ = user
+      ? {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+        }
+      : null;
+  });
+
+  return nextAuth;
+}
+
 export function getFirebaseApp(config?: Partial<FirebaseConfig>): FirebaseApp {
   if (getApps().length) return getApps()[0]!;
   const firebaseConfig = getFirebaseConfig(config);
-  console.log('FIREBASE ENV', {
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    hasApiKey: Boolean(process.env.NEXT_PUBLIC_FIREBASE_API_KEY),
-  });
   app = initializeApp(firebaseConfig);
   return app;
 }
 
 export function getFirebaseAuth(): Auth {
   if (auth) return auth;
-  auth = getAuth(getFirebaseApp());
+  auth = attachBeamAuthBridge(getAuth(getFirebaseApp()));
   return auth;
 }
 

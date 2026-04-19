@@ -59,6 +59,24 @@ A minimalist landing page for BEAM that detects visitor location, deduces their 
 
 ## 🔧 Configuration
 
+### Chrome DevTools Extension
+
+This repo now includes a Home-specific Chrome side-panel extension at `extension/beam-devtools`.
+
+1. Run `npm run build:extension`.
+2. In Chrome, open `chrome://extensions`.
+3. Enable Developer mode.
+4. Choose **Load unpacked** and select `extension/beam-devtools`.
+5. Open `http://localhost:3000`, `https://beamthinktank.space`, or `https://home.beamthinktank.space`, then click the extension icon.
+
+The extension will:
+
+- auto-load Firebase config from this repo's `.env.local` during `npm run build:extension`
+- fall back to config exposed by the active Home tab when available
+- keep a shared `devChecklists/home` checklist in Firestore
+- capture route context and console warnings/errors from the current Home page
+- save Google Drive folder shortcuts so you can switch folders from the side panel
+
 ### Website Directory Admin
 
 - Admin page: `/admin/website-directory`

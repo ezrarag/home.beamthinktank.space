@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { GoogleAuthProvider, signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
+import { clearPostAuthRedirect, rememberPostAuthRedirect } from "@/lib/postAuthRedirect";
 import { ActivityTicker } from "@/components/landing/ActivityTicker";
+import { EcosystemSection } from "@/components/landing/EcosystemSection";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { JoinCTA } from "@/components/landing/JoinCTA";
 import { NetworkMapSection } from "@/components/landing/NetworkMapSection";
@@ -58,6 +60,7 @@ export function BeamPublicLanding() {
   async function handleSignIn() {
     setSignInError(null);
     setIsSigningIn(true);
+    rememberPostAuthRedirect("/participant-dashboard");
 
     try {
       const auth = getFirebaseAuth();
@@ -79,6 +82,7 @@ export function BeamPublicLanding() {
         throw popupError;
       }
     } catch (error) {
+      clearPostAuthRedirect();
       setSignInError(error instanceof Error ? error.message : "Google sign-in failed.");
     } finally {
       setIsSigningIn(false);
@@ -100,6 +104,7 @@ export function BeamPublicLanding() {
           <div className="space-y-8 px-4 py-8 sm:px-8 sm:py-10 lg:space-y-10 lg:px-10 lg:py-12">
             <HeroSection activeNodeCount={publicNodes.length} />
             <NetworkMapSection nodes={publicNodes} />
+            <EcosystemSection />
             <ThesisSection />
             <WhoSection />
             <TrustRail />

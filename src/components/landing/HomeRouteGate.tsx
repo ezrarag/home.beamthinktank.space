@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import BeamEntryExperience from "@/components/BeamEntryExperience";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
+import { clearPostAuthRedirect, consumePostAuthRedirect } from "@/lib/postAuthRedirect";
 import { useAuthStore } from "@/store/authStore";
 import { BeamPublicLanding } from "@/components/landing/BeamPublicLanding";
 
@@ -14,7 +14,7 @@ function LoadingShell() {
         <div className="space-y-4 text-center">
           <p className="beam-eyebrow">BEAM Network</p>
           <div className="mx-auto h-12 w-12 animate-pulse rounded-full border border-[color:var(--beam-gold)] bg-[rgba(200,185,122,0.12)]" />
-          <p className="text-sm text-[var(--beam-text-secondary)]">Loading entry context.</p>
+          <p className="text-sm text-[var(--beam-text-secondary)]">Loading home experience.</p>
         </div>
       </div>
     </main>
@@ -65,6 +65,7 @@ export function HomeRouteGate() {
         };
 
         if (adminResponse.ok && adminPayload.adminUser?.active) {
+          clearPostAuthRedirect();
           router.replace("/admin");
           return;
         }
@@ -77,7 +78,14 @@ export function HomeRouteGate() {
         const ragPayload = (await ragResponse.json().catch(() => ({}))) as { allowed?: boolean };
 
         if (ragResponse.ok && ragPayload.allowed) {
+          clearPostAuthRedirect();
           router.replace("/portal");
+          return;
+        }
+
+        const queuedPath = consumePostAuthRedirect();
+        if (queuedPath) {
+          router.replace(queuedPath);
           return;
         }
       } catch (error) {
@@ -98,10 +106,6 @@ export function HomeRouteGate() {
 
   if (!hasMounted || (!hasInitializedAuth && !user) || (user && isResolvingRoute)) {
     return <LoadingShell />;
-  }
-
-  if (user) {
-    return <BeamEntryExperience />;
   }
 
   return <BeamPublicLanding />;

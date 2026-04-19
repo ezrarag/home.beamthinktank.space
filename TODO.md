@@ -50,7 +50,7 @@
 8. **Firebase configuration** - Set up real Firebase project with proper env vars
 9. **User profiles** - Store user preferences and location data
 10. **NGO data integration** - Connect to real NGO databases
-11. **Payment processing** - Integrate Stripe or similar for subscriptions
+11. **Payment processing** - Integrate BEAM finance subscription handling
 
 ### Stage 5: Advanced Features
 12. **Analytics** - Track user interactions and video engagement
