@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import ArchitectureNgoCard from "@/components/ngo/ArchitectureNgoCard";
 
 const BENEFITS = ["Flights", "Rides", "Hotels"];
 
@@ -19,9 +20,13 @@ export default function CommunityDashboard() {
           <button className="rounded-md bg-[#89C0D0] text-[#0c1215] px-4 py-2 text-sm font-medium hover:brightness-95">Activate Subscription</button>
         </section>
 
-        <section className="rounded-2xl border border-[#23262B] bg-[#1D2127] p-6">
-          <h2 className="text-xl font-medium mb-2">Support a Participant/NGO</h2>
-          <a href="https://hood.beamthinktank.space" className="text-[#89C0D0] hover:underline text-sm">Go to hood.beamthinktank.space</a>
+        <section className="grid gap-4 sm:grid-cols-2">
+          <ArchitectureNgoCard />
+
+          <article className="rounded-2xl border border-[#23262B] bg-[#1D2127] p-6">
+            <h2 className="text-xl font-medium mb-2">Support a Participant/NGO</h2>
+            <a href="https://hood.beamthinktank.space" className="text-[#89C0D0] hover:underline text-sm">Go to hood.beamthinktank.space</a>
+          </article>
         </section>
 
         <section className="rounded-2xl border border-[#23262B] bg-[#1D2127] p-6">
@@ -35,5 +40,4 @@ export default function CommunityDashboard() {
     </main>
   );
 }
-
 

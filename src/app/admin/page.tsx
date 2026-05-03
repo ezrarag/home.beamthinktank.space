@@ -276,6 +276,13 @@ export default function AdminPortalPage() {
             cta="Open Node Management"
           />
           <PortalCard
+            eyebrow="Network Architecture"
+            title="Org Tree Manager"
+            description="Edit the BEAM org hierarchy, fill roles, attach media, and trigger AI financial projections for vacant positions."
+            href="/admin/org-tree"
+            cta="Open Org Tree"
+          />
+          <PortalCard
             eyebrow="Participant Model"
             title="Participant Identity"
             description="Seed and inspect canonical organizations, cohorts, and participant membership counts."
@@ -295,6 +302,13 @@ export default function AdminPortalPage() {
             description="Edit and track hard and soft substrate items. Hard items are built assets; soft items are active relationships and seeded projects. AI assists with drafting outreach and coordination briefs."
             href="/admin/substrate"
             cta="Open Substrate Manager"
+          />
+          <PortalCard
+            eyebrow="NGO Network"
+            title="Architecture NGO"
+            description="Live participant count, project momentum, workspace activity, and intake pipeline for the Architecture cohort."
+            href="/community-dashboard"
+            cta="Open Architecture Dashboard"
           />
           <PortalCard
             eyebrow="Institutional Expansion"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { beamDevtoolsFirebaseConfig, hasBeamDevtoolsFirebaseConfig } from '@/lib/devtools/publicConfig';
 
 const SITE_SLUG = 'home';
@@ -35,13 +35,43 @@ function readLocationState() {
 }
 
 export default function BeamDevtoolsBridge() {
-  const [locationState, setLocationState] = useState(readLocationState);
-
   useEffect(() => {
+    const beamWindow = window as BeamDevtoolsWindow;
+    let pendingSyncTimeout: number | null = null;
+
     const syncLocationState = () => {
-      setLocationState(readLocationState());
+      const locationState = readLocationState();
+
+      beamWindow.__BEAM_PAGE_DEBUG__ = {
+        ngo: SITE_SLUG,
+        siteSlug: SITE_SLUG,
+        displayName: SITE_DISPLAY_NAME,
+        domain: window.location.hostname,
+        origin: window.location.origin,
+        siteUrl,
+        pathname: locationState.pathname,
+        search: locationState.search,
+        checklistCollection: 'devChecklists',
+        devtoolsProjectId: beamDevtoolsFirebaseConfig.NEXT_PUBLIC_BEAM_DEVTOOLS_FIREBASE_PROJECT_ID || null,
+        entryChannel: 'home.beamthinktank.space',
+        googleDriveFolderSwitcherEnabled: true,
+      };
     };
 
+    const scheduleLocationSync = () => {
+      if (pendingSyncTimeout !== null) return;
+
+      // Defer location updates so history mutations triggered during React insertion
+      // effects do not synchronously schedule React work.
+      pendingSyncTimeout = window.setTimeout(() => {
+        pendingSyncTimeout = null;
+        syncLocationState();
+      }, 0);
+    };
+
+    beamWindow.__BEAM_DEVTOOLS_CONFIG__ = hasBeamDevtoolsFirebaseConfig()
+      ? { ...beamDevtoolsFirebaseConfig }
+      : null;
     syncLocationState();
 
     const originalPushState = window.history.pushState.bind(window.history);
@@ -49,49 +79,29 @@ export default function BeamDevtoolsBridge() {
 
     const patchedPushState: History['pushState'] = (...args) => {
       originalPushState(...args);
-      syncLocationState();
+      scheduleLocationSync();
     };
 
     const patchedReplaceState: History['replaceState'] = (...args) => {
       originalReplaceState(...args);
-      syncLocationState();
+      scheduleLocationSync();
     };
 
     window.history.pushState = patchedPushState;
     window.history.replaceState = patchedReplaceState;
-    window.addEventListener('popstate', syncLocationState);
-    window.addEventListener('hashchange', syncLocationState);
+    window.addEventListener('popstate', scheduleLocationSync);
+    window.addEventListener('hashchange', scheduleLocationSync);
 
     return () => {
+      if (pendingSyncTimeout !== null) {
+        window.clearTimeout(pendingSyncTimeout);
+      }
       window.history.pushState = originalPushState;
       window.history.replaceState = originalReplaceState;
-      window.removeEventListener('popstate', syncLocationState);
-      window.removeEventListener('hashchange', syncLocationState);
+      window.removeEventListener('popstate', scheduleLocationSync);
+      window.removeEventListener('hashchange', scheduleLocationSync);
     };
   }, []);
-
-  useEffect(() => {
-    const beamWindow = window as BeamDevtoolsWindow;
-
-    beamWindow.__BEAM_PAGE_DEBUG__ = {
-      ngo: SITE_SLUG,
-      siteSlug: SITE_SLUG,
-      displayName: SITE_DISPLAY_NAME,
-      domain: window.location.hostname,
-      origin: window.location.origin,
-      siteUrl,
-      pathname: locationState.pathname,
-      search: locationState.search,
-      checklistCollection: 'devChecklists',
-      devtoolsProjectId: beamDevtoolsFirebaseConfig.NEXT_PUBLIC_BEAM_DEVTOOLS_FIREBASE_PROJECT_ID || null,
-      entryChannel: 'home.beamthinktank.space',
-      googleDriveFolderSwitcherEnabled: true,
-    };
-
-    beamWindow.__BEAM_DEVTOOLS_CONFIG__ = hasBeamDevtoolsFirebaseConfig()
-      ? { ...beamDevtoolsFirebaseConfig }
-      : null;
-  }, [locationState.pathname, locationState.search]);
 
   return null;
 }

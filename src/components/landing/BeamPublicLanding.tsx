@@ -9,6 +9,7 @@ import { EcosystemSection } from "@/components/landing/EcosystemSection";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { JoinCTA } from "@/components/landing/JoinCTA";
 import { NetworkMapSection } from "@/components/landing/NetworkMapSection";
+import { OrgTreeSection } from "@/components/landing/OrgTreeSection";
 import { PublicFooter } from "@/components/landing/PublicFooter";
 import { PublicNav } from "@/components/landing/PublicNav";
 import { TrustRail } from "@/components/landing/TrustRail";
@@ -105,6 +106,7 @@ export function BeamPublicLanding() {
             <HeroSection activeNodeCount={publicNodes.length} />
             <NetworkMapSection nodes={publicNodes} />
             <EcosystemSection />
+            <OrgTreeSection />
             <ThesisSection />
             <WhoSection />
             <TrustRail />
