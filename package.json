@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:use-cases": "node --env-file=.env.local ./node_modules/tsx/dist/cli.mjs scripts/seed-use-cases.ts",
+    "audit:firestore": "node --env-file=.env.local ./node_modules/tsx/dist/cli.mjs scripts/audit-firestore.ts"
   },
   "dependencies": {
     "@tamagui/animations-react-native": "^1.133.0",
@@ -30,7 +32,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.9",
+    "firebase-admin": "^13.10.0",
     "tailwindcss": "^4",
+    "tsx": "^4.20.5",
     "typescript": "5.9.2"
   }
 }

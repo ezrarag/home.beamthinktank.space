@@ -1,3 +1,7 @@
+export {};
+
+import { execSync } from "node:child_process";
+
 type NodeStage = 0 | 1 | 2 | 3 | 4;
 type NodeStatus = "identified" | "forming" | "activating" | "active" | "established";
 
@@ -142,14 +146,27 @@ function getProjectId(): string {
   return projectId;
 }
 
-function getIdToken(): string {
+function getAccessToken(): string {
   const cliToken = process.argv[2]?.trim();
-  const envToken = process.env.FIREBASE_ID_TOKEN?.trim();
-  const idToken = cliToken || envToken || "";
-  if (!idToken) {
-    throw new Error("Pass a Firebase ID token as the first CLI arg or FIREBASE_ID_TOKEN env var.");
+  const envToken =
+    process.env.GOOGLE_OAUTH_ACCESS_TOKEN?.trim() ||
+    process.env.GCLOUD_ACCESS_TOKEN?.trim() ||
+    process.env.FIREBASE_ACCESS_TOKEN?.trim();
+
+  if (cliToken || envToken) {
+    return cliToken || envToken || "";
   }
-  return idToken;
+
+  try {
+    return execSync("gcloud auth print-access-token", {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim();
+  } catch {
+    throw new Error(
+      "No Google access token found. Run `gcloud auth login` first, or pass one as the first CLI arg, or set GOOGLE_OAUTH_ACCESS_TOKEN."
+    );
+  }
 }
 
 function getBaseUrl(): string {
@@ -192,12 +209,12 @@ function toFirestoreFields(value: Record<string, unknown>): Record<string, Fires
   return fields;
 }
 
-async function commitWrites(idToken: string, writes: unknown[]): Promise<void> {
+async function commitWrites(accessToken: string, writes: unknown[]): Promise<void> {
   const response = await fetch(`${getBaseUrl()}:commit`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`,
+      Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ writes }),
   });
@@ -209,7 +226,7 @@ async function commitWrites(idToken: string, writes: unknown[]): Promise<void> {
 }
 
 async function seed() {
-  const idToken = getIdToken();
+  const accessToken = getAccessToken();
 
   for (const node of nodes) {
     const id = slugifyNodeId(node.city);
@@ -218,7 +235,7 @@ async function seed() {
       createdAt: new Date().toISOString(),
     });
 
-    await commitWrites(idToken, [
+    await commitWrites(accessToken, [
       {
         update: {
           name: getDocumentName(id),

@@ -61,6 +61,82 @@ service cloud.firestore {
         && data.updatedBy is string;
     }
 
+    function useCaseRequiredFieldsPresent(data) {
+      return data.keys().hasAll([
+        'slug',
+        'name',
+        'context',
+        'stage',
+        'economicModel',
+        'firstAction',
+        'capture',
+        'orchestrate',
+        'produce',
+        'money',
+        'relatedClientSlug',
+        'relatedDivision',
+        'status',
+        'isPublished',
+        'sortOrder',
+        'updatedAt',
+      ]);
+    }
+
+    function useCaseOnlyAllowedFields(data) {
+      return data.keys().hasOnly([
+        'slug',
+        'name',
+        'context',
+        'stage',
+        'economicModel',
+        'firstAction',
+        'capture',
+        'orchestrate',
+        'produce',
+        'money',
+        'relatedClientSlug',
+        'relatedDivision',
+        'status',
+        'isPublished',
+        'sortOrder',
+        'updatedAt',
+      ]);
+    }
+
+    function isValidUseCaseStep(step) {
+      return step is map
+        && step.keys().hasOnly(['body', 'tools'])
+        && step.body is string
+        && step.tools is list;
+    }
+
+    function isValidUseCaseMoney(money) {
+      return money is map
+        && money.keys().hasOnly(['body'])
+        && money.body is string;
+    }
+
+    function isValidUseCaseData(data) {
+      return useCaseRequiredFieldsPresent(data)
+        && useCaseOnlyAllowedFields(data)
+        && data.slug is string
+        && data.name is string
+        && data.context is string
+        && data.stage in ['agency', 'redevelopment', 'recording', 'directory', 'procurement', 'education']
+        && data.economicModel is string
+        && data.firstAction is string
+        && isValidUseCaseStep(data.capture)
+        && isValidUseCaseStep(data.orchestrate)
+        && isValidUseCaseStep(data.produce)
+        && isValidUseCaseMoney(data.money)
+        && (data.relatedClientSlug == null || data.relatedClientSlug is string)
+        && (data.relatedDivision == null || data.relatedDivision is string)
+        && data.status in ['concept', 'active', 'paused', 'complete']
+        && data.isPublished is bool
+        && data.sortOrder is int
+        && data.updatedAt is timestamp;
+    }
+
     // User-owned profile and onboarding data.
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
@@ -73,6 +149,12 @@ service cloud.firestore {
       // Tighten this back to admin-only before production launch.
       allow create, update: if isValidDirectoryData(request.resource.data);
       allow delete: if true;
+    }
+
+    match /useCases/{docId} {
+      allow read: if resource.data.isPublished == true || isAdmin();
+      allow create, update: if isAdmin() && isValidUseCaseData(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     match /nodes/{docId} {
@@ -123,6 +205,11 @@ service cloud.firestore {
     match /beamAssets/{docId} {
       allow read: if true;
       allow create, update, delete: if true;
+    }
+
+    match /beamProcesses/{docId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     // Canonical participant identity and membership layer.

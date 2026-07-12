@@ -27,6 +27,19 @@ function hasAutoHandoffContext(form: BeamHandoffFormState) {
   );
 }
 
+function getValidBeamLandingPageUrl(value: string): string | null {
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.toLowerCase();
+    const isWebUrl = url.protocol === "https:" || url.protocol === "http:";
+    const isBeamSubdomain = hostname.endsWith(".beamthinktank.space") && hostname !== "beamthinktank.space";
+
+    return isWebUrl && isBeamSubdomain ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 function BeamHandoffPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -114,6 +127,12 @@ function BeamHandoffPageContent() {
 
       if (typeof window !== "undefined") {
         window.localStorage.setItem("beam-handoff", JSON.stringify(payload));
+      }
+
+      const landingPageUrl = getValidBeamLandingPageUrl(payload.landingPageUrl);
+      if (landingPageUrl && typeof window !== "undefined") {
+        window.location.assign(landingPageUrl);
+        return;
       }
 
       const nextPath = payload.redirectTarget === "role_onboarding" ? `/onboard/${payload.role}` : "/participant-dashboard";

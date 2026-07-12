@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import AuthBootstrapper from "@/components/AuthBootstrapper";
 import "./globals.css";
 
+/* eslint-disable @next/next/no-page-custom-font -- App Router root layout owns the site-wide font links. */
+
 export const metadata: Metadata = {
   title: "BEAM - Think Tank Home",
   description: "Connect with NGOs and community initiatives in your area",

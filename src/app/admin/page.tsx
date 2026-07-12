@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
@@ -51,6 +51,8 @@ export default function AdminPortalPage() {
   const [isSendingSlack, setIsSendingSlack] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [tokenCopied, setTokenCopied] = useState(false);
+  const tokenCopiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     try {
@@ -58,7 +60,10 @@ export default function AdminPortalPage() {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         setIsSignedIn(Boolean(user));
       });
-      return unsubscribe;
+      return () => {
+        unsubscribe();
+        if (tokenCopiedTimeoutRef.current) clearTimeout(tokenCopiedTimeoutRef.current);
+      };
     } catch {
       setIsSignedIn(false);
       return undefined;
@@ -122,6 +127,25 @@ export default function AdminPortalPage() {
       }
     } catch (signInError) {
       setError(signInError instanceof Error ? signInError.message : "Google sign-in failed.");
+    }
+  }
+
+  async function handleCopyIdToken() {
+    setError(null);
+
+    try {
+      const auth = getFirebaseAuth();
+      if (!auth.currentUser) throw new Error("No signed-in Firebase user found.");
+
+      const token = await auth.currentUser.getIdToken(true);
+      await navigator.clipboard.writeText(token);
+      setTokenCopied(true);
+
+      if (tokenCopiedTimeoutRef.current) clearTimeout(tokenCopiedTimeoutRef.current);
+      tokenCopiedTimeoutRef.current = setTimeout(() => setTokenCopied(false), 3000);
+    } catch (copyError) {
+      setTokenCopied(false);
+      setError(copyError instanceof Error ? copyError.message : "Failed to copy ID token.");
     }
   }
 
@@ -242,6 +266,18 @@ export default function AdminPortalPage() {
               >
                 {isSignedIn ? "Signed In" : "Generic Google Sign In"}
               </button>
+              {isSignedIn ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleCopyIdToken}
+                    className="inline-flex rounded-full border border-white/20 px-4 py-2 text-xs uppercase tracking-[0.18em] text-white/85 transition hover:border-white/50 hover:text-white"
+                  >
+                    Copy ID Token
+                  </button>
+                  {tokenCopied ? <span className="self-center text-xs text-emerald-300">Token copied</span> : null}
+                </>
+              ) : null}
             </div>
           </form>
         </header>
@@ -274,6 +310,13 @@ export default function AdminPortalPage() {
             description="Seed and inspect canonical organizations, cohorts, and participant membership counts."
             href="/admin/participant-identity"
             cta="Open Participant Identity"
+          />
+          <PortalCard
+            eyebrow="Research + Production"
+            title="Use-Case Gallery"
+            description="Research + production use cases · public at /use-cases"
+            href="/admin/use-cases"
+            cta="Open Use-Case Gallery"
           />
           <PortalCard
             eyebrow="Client Access"
