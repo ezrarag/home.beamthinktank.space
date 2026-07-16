@@ -11,6 +11,7 @@ import { PublicFooter } from "@/components/landing/PublicFooter";
 import { PublicNav } from "@/components/landing/PublicNav";
 import { TrustRail } from "@/components/landing/TrustRail";
 import { WhoSection } from "@/components/landing/WhoSection";
+import { DivisionStack } from "@/components/landing/DivisionStack";
 import { ThesisSection } from "@/components/thesis/ThesisSection";
 import type { BeamNode } from "@/lib/server/firestoreNodes";
 
@@ -109,6 +110,7 @@ export function BeamPublicLanding() {
           <PublicFooter />
         </div>
       </div>
+      <DivisionStack />
     </main>
   );
 }
