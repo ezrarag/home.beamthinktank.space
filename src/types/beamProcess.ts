@@ -13,12 +13,13 @@ export interface BeamProcessFunding {
   targetUsd: number;
   raisedUsd: number;
   label: string;
+  deadlineDate?: string;
 }
 
 export interface BeamProcess {
   id: string;
   title: string;
-  domain: "library" | "grounds" | "architecture" | "forge" | "band" | "other";
+  domain: "library" | "grounds" | "architecture" | "forge" | "band" | "other" | "law" | "grants";
   linkedEntityId?: string;
   linkedEntityType?: string;
   stages: BeamProcessStage[];

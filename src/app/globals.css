@@ -184,25 +184,90 @@ html {
 }
 
 .division-stack__intro {
-  display: grid;
-  min-height: 52vh;
-  align-content: end;
-  gap: 1.25rem;
-  padding: clamp(5rem, 10vw, 10rem) clamp(1.25rem, 6vw, 6rem);
+  display: flex;
+  min-height: 100svh;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(1.25rem, 3vw, 2.5rem) clamp(1.25rem, 6vw, 6rem) clamp(3rem, 7vw, 7rem);
   border-top: 1px solid rgba(240, 234, 214, 0.12);
-  background: #080908;
+  background:
+    radial-gradient(circle at 78% 26%, rgba(200, 185, 122, 0.13), transparent 28%),
+    linear-gradient(145deg, #080908 0%, #0d0e0b 100%);
 }
 
-.division-stack__intro h2 {
+.division-stack__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  color: var(--beam-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.division-stack__nav a {
+  transition: color 180ms ease;
+}
+
+.division-stack__nav a:hover {
+  color: var(--beam-text-primary);
+}
+
+.division-stack__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.division-stack__brand > span:first-child {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: 1px solid rgba(200, 185, 122, 0.35);
+  border-radius: 50%;
+  color: var(--beam-gold-bright);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+}
+
+.division-stack__intro-copy {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.division-stack__intro h1 {
   max-width: 12ch;
   font-size: clamp(3.5rem, 9vw, 9rem);
   line-height: 0.86;
   letter-spacing: -0.065em;
 }
 
-.division-stack__intro > p:last-child {
-  max-width: 32rem;
+.division-stack__intro-footer {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  padding-top: clamp(1rem, 3vw, 3rem);
+}
+
+.division-stack__intro-footer p {
+  max-width: 34rem;
   color: var(--beam-text-secondary);
+}
+
+.division-stack__intro-footer a {
+  display: flex;
+  gap: 1.5rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(200, 185, 122, 0.45);
+  color: var(--beam-gold);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .division-stack__cards {
@@ -330,6 +395,19 @@ html {
 }
 
 @media (max-width: 767px) {
+  .division-stack__nav > a:last-child {
+    max-width: 9rem;
+    text-align: right;
+  }
+
+  .division-stack__intro-footer {
+    display: grid;
+  }
+
+  .division-stack__intro-footer a {
+    width: fit-content;
+  }
+
   .division-card {
     min-height: 34rem;
   }

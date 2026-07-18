@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import BeamEntryExperience from "@/components/BeamEntryExperience";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
 import { useAuthStore } from "@/store/authStore";
 import { BeamPublicLanding } from "@/components/landing/BeamPublicLanding";
@@ -101,7 +100,7 @@ export function HomeRouteGate() {
   }
 
   if (user) {
-    return <BeamEntryExperience />;
+    return <BeamPublicLanding />;
   }
 
   return <BeamPublicLanding />;
