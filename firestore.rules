@@ -10,6 +10,15 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.admin == true;
     }
 
+    function canAccessMeeting(meetingId) {
+      let meeting = get(/databases/$(database)/documents/meetings/$(meetingId)).data;
+      return isSignedIn() && (
+        isAdmin()
+        || meeting.restrictToInvitees != true
+        || request.auth.token.email.lower() in meeting.invitees
+      );
+    }
+
     function directoryRequiredFieldsPresent(data) {
       return data.keys().hasAll([
         'label',
@@ -215,13 +224,13 @@ service cloud.firestore {
     // Shared catch-up workspace. Comments are visible to signed-in collaborators;
     // authors retain control of their own posts and admins can moderate.
     match /workstationComments/{docId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn()
+      allow read: if canAccessMeeting(resource.data.meetingId);
+      allow create: if canAccessMeeting(request.resource.data.meetingId)
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.meetingId is string
         && request.resource.data.body is string
         && request.resource.data.body.size() > 0;
-      allow update, delete: if isSignedIn()
+      allow update, delete: if canAccessMeeting(resource.data.meetingId)
         && (request.auth.uid == resource.data.userId || isAdmin());
     }
 
@@ -239,15 +248,15 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
 
       match /agendaSuggestions/{suggestionId} {
-        allow read: if isSignedIn();
-        allow create: if isSignedIn()
+        allow read: if canAccessMeeting(meetingId);
+        allow create: if canAccessMeeting(meetingId)
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0
           && request.resource.data.submittedByEmail == request.auth.token.email
           && request.resource.data.voteCount == 0;
         // A vote transaction may only change the cached count by one and must
         // atomically create/delete this user's matching vote document.
-        allow update: if isSignedIn()
+        allow update: if canAccessMeeting(meetingId)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['voteCount'])
           && request.resource.data.voteCount is int
           && request.resource.data.voteCount >= 0
@@ -263,21 +272,21 @@ service cloud.firestore {
         allow delete: if isAdmin();
 
         match /votes/{userId} {
-          allow read: if isSignedIn();
-          allow create: if isSignedIn()
+          allow read: if canAccessMeeting(meetingId);
+          allow create: if canAccessMeeting(meetingId)
             && userId == request.auth.uid
             && request.resource.data.userId == request.auth.uid;
           allow update: if false;
-          allow delete: if isSignedIn() && userId == request.auth.uid;
+          allow delete: if canAccessMeeting(meetingId) && userId == request.auth.uid;
         }
       }
 
       match /attendance/{userId} {
-        allow read: if isSignedIn();
-        allow create, update: if isSignedIn()
+        allow read: if canAccessMeeting(meetingId);
+        allow create, update: if canAccessMeeting(meetingId)
           && userId == request.auth.uid
           && request.resource.data.userId == request.auth.uid;
-        allow delete: if isSignedIn() && userId == request.auth.uid;
+        allow delete: if canAccessMeeting(meetingId) && userId == request.auth.uid;
       }
     }
 

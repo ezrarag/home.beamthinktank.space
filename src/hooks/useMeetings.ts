@@ -17,6 +17,7 @@ function normalizeMeeting(id: string, data: DocumentData): BeamMeeting {
       ? data.takeaways.map((item: MeetingTakeaway) => ({ heading: String(item.heading ?? ""), body: String(item.body ?? "") }))
       : [],
     invitees: Array.isArray(data.invitees) ? data.invitees.map(String) : [],
+    restrictToInvitees: data.restrictToInvitees === true,
     order: Number(data.order ?? 0),
     meetSpaceUri: typeof data.meetSpaceUri === "string" ? data.meetSpaceUri : null,
     meetSpaceName: typeof data.meetSpaceName === "string" ? data.meetSpaceName : null,

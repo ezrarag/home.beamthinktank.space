@@ -2,13 +2,21 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    function canAccessMeeting(meetingId) {
+      let meeting = firestore.get(/databases/(default)/documents/meetings/$(meetingId)).data;
+      return request.auth != null && (
+        request.auth.token.admin == true
+        || meeting.restrictToInvitees != true
+        || request.auth.token.email.lower() in meeting.invitees
+      );
+    }
     // User-owned uploads only.
     match /users/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
     match /meetings/{meetingId}/{allPaths=**} {
-      allow read: if request.auth != null;
+      allow read: if canAccessMeeting(meetingId);
       allow write: if request.auth != null && request.auth.token.admin == true;
     }
   }

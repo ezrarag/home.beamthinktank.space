@@ -14,6 +14,7 @@ export type BeamMeeting = {
   audioStoragePath: string | null;
   takeaways: MeetingTakeaway[];
   invitees: string[];
+  restrictToInvitees: boolean;
   order: number;
   meetSpaceUri: string | null;
   meetSpaceName: string | null;
