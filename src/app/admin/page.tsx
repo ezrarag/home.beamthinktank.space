@@ -368,6 +368,13 @@ export default function AdminPortalPage() {
             href="/admin/grants"
             cta="Open Grants Track"
           />
+          <PortalCard
+            eyebrow="Collaboration"
+            title="Meetings & Catch-Up"
+            description="Create meeting workspaces, manage agendas and takeaways, upload audio, and coordinate Google Meet artifacts."
+            href="/admin/workstation"
+            cta="Manage Meetings"
+          />
 
           <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <p className="text-xs uppercase tracking-[0.2em] text-white/50">Integration Testing</p>

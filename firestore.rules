@@ -234,6 +234,29 @@ service cloud.firestore {
         && resource.data.userId == request.auth.uid;
     }
 
+    match /meetings/{meetingId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+
+      match /agendaSuggestions/{suggestionId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn()
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.submittedByEmail == request.auth.token.email;
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
+
+      match /attendance/{userId} {
+        allow read: if isSignedIn();
+        allow create, update: if isSignedIn()
+          && userId == request.auth.uid
+          && request.resource.data.userId == request.auth.uid;
+        allow delete: if isSignedIn() && userId == request.auth.uid;
+      }
+    }
+
     // Canonical participant identity and membership layer.
     match /organizations/{docId} {
       allow read, create, update, delete: if isAdmin();

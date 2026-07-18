@@ -145,6 +145,14 @@ export function DivisionStack() {
                   </Link>
                   <div className="border-t border-white/10 my-1" />
                   <Link
+                    href="/admin"
+                    className="block px-3 py-2 text-xs text-white/85 hover:text-white hover:bg-white/5 rounded-lg transition"
+                    onClick={() => setDropdownOpen(false)}
+                  >
+                    Admin Portal
+                  </Link>
+                  <div className="border-t border-white/10 my-1" />
+                  <Link
                     href="/admin/grants"
                     className="block px-3 py-2 text-xs text-white/85 hover:text-white hover:bg-white/5 rounded-lg transition"
                     onClick={() => setDropdownOpen(false)}
