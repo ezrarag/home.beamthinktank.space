@@ -6,17 +6,19 @@ import { collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc, type D
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { GoogleAuthProvider, getAdditionalUserInfo, getIdTokenResult, onAuthStateChanged, signInWithPopup } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDb, getFirebaseStorage } from "@/lib/firebaseClient";
+import { parseTakeawaysMarkdown } from "@/lib/parseTakeawaysMarkdown";
 import { useAuthStore } from "@/store/authStore";
 import { useMeetings } from "@/hooks/useMeetings";
 import type { BeamMeeting, MeetingStatus, MeetingTakeaway } from "@/types/meeting";
 
-type Suggestion = { id: string; text: string; submittedByEmail: string };
+type Suggestion = { id: string; text: string; submittedByEmail: string; voteCount: number };
 type FormState = Omit<BeamMeeting, "id">;
 
 const EMPTY_FORM: FormState = {
   title: "", dateISO: "", status: "upcoming", agenda: "", audioStoragePath: null,
   takeaways: [], invitees: [], order: 1, meetSpaceUri: null, meetSpaceName: null,
   meetConferenceRecordId: null, transcriptStoragePath: null, recordingStoragePath: null,
+  transcriptDriveUri: null, recordingDriveUri: null,
 };
 
 function slugify(value: string) {
@@ -24,7 +26,7 @@ function slugify(value: string) {
 }
 
 function mapSuggestion(id: string, data: DocumentData): Suggestion {
-  return { id, text: String(data.text ?? ""), submittedByEmail: String(data.submittedByEmail ?? "") };
+  return { id, text: String(data.text ?? ""), submittedByEmail: String(data.submittedByEmail ?? ""), voteCount: Number(data.voteCount ?? 0) };
 }
 
 export default function AdminWorkstationPage() {
@@ -39,6 +41,8 @@ export default function AdminWorkstationPage() {
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [takeawaysMarkdown, setTakeawaysMarkdown] = useState("");
+  const [parsedTakeaways, setParsedTakeaways] = useState<MeetingTakeaway[]>([]);
 
   useEffect(() => initializeAuth(), [initializeAuth]);
   useEffect(() => {
@@ -51,17 +55,17 @@ export default function AdminWorkstationPage() {
   useEffect(() => {
     if (!editingId || !user) { setSuggestions([]); return; }
     return onSnapshot(collection(getFirebaseDb(), "meetings", editingId, "agendaSuggestions"), (snapshot) => {
-      setSuggestions(snapshot.docs.map((entry) => mapSuggestion(entry.id, entry.data())));
+      setSuggestions(snapshot.docs.map((entry) => mapSuggestion(entry.id, entry.data())).sort((a, b) => b.voteCount - a.voteCount));
     });
   }, [editingId, user]);
 
   function editMeeting(meeting: BeamMeeting) {
     const { id, ...values } = meeting;
-    setEditingId(id); setForm(values); setInviteesText(values.invitees.join("\n")); setMessage(null); setError(null);
+    setEditingId(id); setForm(values); setInviteesText(values.invitees.join("\n")); setTakeawaysMarkdown(""); setParsedTakeaways([]); setMessage(null); setError(null);
   }
 
   function newMeeting() {
-    setEditingId(null); setForm({ ...EMPTY_FORM, order: meetings.length + 1 }); setInviteesText(""); setSuggestions([]); setMessage(null); setError(null);
+    setEditingId(null); setForm({ ...EMPTY_FORM, order: meetings.length + 1 }); setInviteesText(""); setSuggestions([]); setTakeawaysMarkdown(""); setParsedTakeaways([]); setMessage(null); setError(null);
   }
 
   async function saveMeeting(event: FormEvent) {
@@ -84,6 +88,23 @@ export default function AdminWorkstationPage() {
     setForm((current) => ({ ...current, takeaways: current.takeaways.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item) }));
   }
 
+  function previewMarkdown() {
+    const parsed = parseTakeawaysMarkdown(takeawaysMarkdown);
+    setParsedTakeaways(parsed);
+    setError(parsed.length ? null : "No takeaway sections were found. Use a Markdown heading such as ## Headline followed by body text.");
+  }
+
+  function applyMarkdownPreview() {
+    if (!parsedTakeaways.length) return;
+    setForm((current) => ({ ...current, takeaways: parsedTakeaways }));
+    setMessage(`${parsedTakeaways.length} parsed takeaways added to this draft. Save the meeting to publish them.`);
+  }
+
+  function copySuggestionToAgenda(item: Suggestion) {
+    setForm((current) => ({ ...current, agenda: current.agenda.trim() ? `${current.agenda.trim()}\n\n${item.text}` : item.text }));
+    setMessage("Suggestion copied into the agenda draft. Save the meeting to publish it.");
+  }
+
   async function uploadAudio(file: File) {
     if (!editingId) { setError("Save the meeting before uploading audio."); return; }
     setError(null); setUploadProgress(0);
@@ -103,6 +124,7 @@ export default function AdminWorkstationPage() {
     const provider = new GoogleAuthProvider();
     provider.addScope("https://www.googleapis.com/auth/meetings.space.created");
     provider.addScope("https://www.googleapis.com/auth/meetings.space.readonly");
+    provider.addScope("https://www.googleapis.com/auth/drive.readonly");
     const result = await signInWithPopup(getFirebaseAuth(), provider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     if (!credential?.accessToken) throw new Error("Google did not return Meet authorization.");
@@ -118,7 +140,7 @@ export default function AdminWorkstationPage() {
       const response = await fetch(`/api/admin/workstation/meet/${editingId}/${action}`, { method: "POST", headers: { Authorization: `Bearer ${firebaseToken}`, "x-google-access-token": googleToken } });
       const payload = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(payload.error || `Meet ${action} failed.`);
-      setMessage(action === "launch" ? "Google Meet space launched." : "Meet recording and transcript references synced.");
+      setMessage(action === "launch" ? "Google Meet space launched." : "Meet recording and transcript copied into Firebase Storage.");
     } catch (nextError) { setError(nextError instanceof Error ? nextError.message : `Meet ${action} failed.`); }
     finally { setBusyAction(null); }
   }
@@ -142,9 +164,9 @@ export default function AdminWorkstationPage() {
             <label className="sm:col-span-2 text-xs text-white/55">Agenda<textarea rows={4} value={form.agenda} onChange={(e) => setForm({ ...form, agenda: e.target.value })} className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-white"/></label>
             <label className="sm:col-span-2 text-xs text-white/55">Invitees (one email per line)<textarea rows={4} value={inviteesText} onChange={(e) => setInviteesText(e.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-white"/></label>
           </div>
-          <section className="mt-8 border-t border-white/10 pt-6"><div className="flex justify-between"><h3 className="font-medium">Key takeaways</h3><button type="button" onClick={() => setForm({ ...form, takeaways: [...form.takeaways, { heading: "", body: "" }] })} className="text-xs text-[var(--beam-gold)]">+ Add takeaway</button></div><div className="mt-4 space-y-4">{form.takeaways.map((item, index) => <div key={index} className="rounded-xl border border-white/10 p-4"><input value={item.heading} onChange={(e) => updateTakeaway(index, { heading: e.target.value })} placeholder="Heading" className="w-full bg-transparent font-medium outline-none"/><textarea value={item.body} onChange={(e) => updateTakeaway(index, { body: e.target.value })} rows={3} placeholder="Body" className="mt-3 w-full resize-none rounded-lg bg-black/20 p-3 text-sm text-white/65 outline-none"/><button type="button" onClick={() => setForm({ ...form, takeaways: form.takeaways.filter((_, i) => i !== index) })} className="mt-2 text-[10px] text-red-300">Remove</button></div>)}</div></section>
+          <section className="mt-8 border-t border-white/10 pt-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-medium">NotebookLM takeaways</h3><p className="mt-1 text-xs text-white/40">Paste Markdown headings and body text, preview, then apply to the meeting draft.</p></div><button type="button" onClick={() => setForm({ ...form, takeaways: [...form.takeaways, { heading: "", body: "" }] })} className="text-xs text-[var(--beam-gold)]">+ Add manually</button></div><textarea value={takeawaysMarkdown} onChange={(e) => { setTakeawaysMarkdown(e.target.value); setParsedTakeaways([]); }} rows={9} placeholder={'## First takeaway\nWhat the group decided and why.\n\n## Next action\nWhat happens next and who owns it.'} className="mt-4 w-full rounded-xl border border-white/10 bg-black/30 p-4 font-mono text-xs leading-6 text-white outline-none focus:border-[var(--beam-gold)]"/><div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={previewMarkdown} disabled={!takeawaysMarkdown.trim()} className="rounded-full border border-white/15 px-4 py-2 text-xs disabled:opacity-40">Preview parsed takeaways</button>{parsedTakeaways.length ? <button type="button" onClick={applyMarkdownPreview} className="rounded-full bg-[var(--beam-gold)] px-4 py-2 text-xs font-semibold text-black">Use these {parsedTakeaways.length} takeaways</button> : null}</div>{parsedTakeaways.length ? <div className="mt-4 grid gap-3 sm:grid-cols-2">{parsedTakeaways.map((item, index) => <article key={`${item.heading}-${index}`} className="rounded-xl border border-[var(--beam-gold)]/25 bg-[var(--beam-gold)]/5 p-4"><p className="text-xs font-semibold text-[var(--beam-gold)]">{item.heading}</p><p className="mt-2 whitespace-pre-wrap text-xs leading-5 text-white/55">{item.body}</p></article>)}</div> : null}<div className="mt-6 space-y-4">{form.takeaways.map((item, index) => <div key={index} className="rounded-xl border border-white/10 p-4"><input value={item.heading} onChange={(e) => updateTakeaway(index, { heading: e.target.value })} placeholder="Heading" className="w-full bg-transparent font-medium outline-none"/><textarea value={item.body} onChange={(e) => updateTakeaway(index, { body: e.target.value })} rows={3} placeholder="Body" className="mt-3 w-full resize-none rounded-lg bg-black/20 p-3 text-sm text-white/65 outline-none"/><button type="button" onClick={() => setForm({ ...form, takeaways: form.takeaways.filter((_, i) => i !== index) })} className="mt-2 text-[10px] text-red-300">Remove</button></div>)}</div></section>
           <section className="mt-8 grid gap-4 border-t border-white/10 pt-6 sm:grid-cols-2"><div><h3 className="font-medium">Meeting audio</h3><input type="file" accept="audio/*" disabled={!editingId} onChange={(e) => { const file = e.target.files?.[0]; if (file) void uploadAudio(file); }} className="mt-3 block w-full text-xs text-white/50"/>{uploadProgress !== null ? <p className="mt-2 text-xs text-[var(--beam-gold)]">Uploading {uploadProgress}%</p> : form.audioStoragePath ? <p className="mt-2 break-all text-[10px] text-white/35">{form.audioStoragePath}</p> : null}</div><div><h3 className="font-medium">Google Meet</h3><div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={!editingId || busyAction !== null} onClick={() => void callMeetAction("launch")} className="rounded-full border border-white/15 px-3 py-2 text-xs">{busyAction === "launch" ? "Launching..." : "Launch meeting"}</button><button type="button" disabled={!editingId || !form.meetConferenceRecordId || busyAction !== null} onClick={() => void callMeetAction("sync")} className="rounded-full border border-white/15 px-3 py-2 text-xs">{busyAction === "sync" ? "Syncing..." : "Sync recording"}</button></div>{form.meetSpaceUri ? <a href={form.meetSpaceUri} target="_blank" rel="noreferrer" className="mt-3 block text-xs text-[var(--beam-gold)]">Open Meet ↗</a> : null}</div></section>
-          {editingId ? <section className="mt-8 border-t border-white/10 pt-6"><h3 className="font-medium">Agenda suggestions</h3><div className="mt-3 space-y-2">{suggestions.length === 0 ? <p className="text-xs text-white/35">No suggestions yet.</p> : suggestions.map((item) => <div key={item.id} className="flex justify-between gap-4 rounded-xl bg-black/20 p-3 text-sm"><div><p>{item.text}</p><p className="mt-1 text-[10px] text-white/35">{item.submittedByEmail}</p></div><button type="button" onClick={() => void deleteDoc(doc(getFirebaseDb(), "meetings", editingId, "agendaSuggestions", item.id))} className="text-[10px] text-red-300">Delete</button></div>)}</div></section> : null}
+          {editingId ? <section className="mt-8 border-t border-white/10 pt-6"><h3 className="font-medium">Agenda suggestions</h3><div className="mt-3 space-y-2">{suggestions.length === 0 ? <p className="text-xs text-white/35">No suggestions yet.</p> : suggestions.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-black/20 p-3 text-sm"><div className="min-w-0 flex-1"><p>{item.text}</p><p className="mt-1 text-[10px] text-white/35">{item.voteCount} votes · {item.submittedByEmail}</p></div><div className="flex gap-3"><button type="button" onClick={() => copySuggestionToAgenda(item)} className="text-[10px] text-[var(--beam-gold)]">Copy to agenda</button><button type="button" onClick={() => void deleteDoc(doc(getFirebaseDb(), "meetings", editingId, "agendaSuggestions", item.id))} className="text-[10px] text-red-300">Delete</button></div></div>)}</div></section> : null}
           <button type="submit" className="mt-8 rounded-full bg-[var(--beam-gold)] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-black">Save meeting</button>
         </form>
       </div>

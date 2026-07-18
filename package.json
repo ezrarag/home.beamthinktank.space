@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:takeaways": "node --import tsx --test src/lib/parseTakeawaysMarkdown.test.ts",
     "seed:use-cases": "node --env-file=.env.local ./node_modules/tsx/dist/cli.mjs scripts/seed-use-cases.ts",
     "seed:grants": "node --env-file=.env.local ./node_modules/tsx/dist/cli.mjs scripts/seedGrantProcesses.ts",
     "seed:meetings": "node --env-file=.env.local ./node_modules/tsx/dist/cli.mjs scripts/seedMeetings.ts",

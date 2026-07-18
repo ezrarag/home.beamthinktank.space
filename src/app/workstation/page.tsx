@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { addDoc, collection, deleteDoc, doc, getCountFromServer, onSnapshot, serverTimestamp, setDoc, type DocumentData } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getCountFromServer, getDoc, onSnapshot, runTransaction, serverTimestamp, setDoc, type DocumentData } from "firebase/firestore";
 import { getDownloadURL, ref } from "firebase/storage";
 import { GoogleAuthProvider, signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDb, getFirebaseStorage } from "@/lib/firebaseClient";
@@ -11,6 +11,7 @@ import { useBeamProcesses } from "@/hooks/useBeamProcesses";
 import { useMeetings } from "@/hooks/useMeetings";
 
 type Comment = { id: string; userId: string; authorName: string; body: string; audioSeconds: number | null; createdAt: { toDate?: () => Date } | null };
+type AgendaSuggestion = { id: string; text: string; submittedByEmail: string; voteCount: number };
 
 function normalizeComment(id: string, data: DocumentData): Comment {
   return { id, userId: String(data.userId ?? ""), authorName: String(data.authorName ?? "Collaborator"), body: String(data.body ?? ""), audioSeconds: typeof data.audioSeconds === "number" ? data.audioSeconds : null, createdAt: data.createdAt ?? null };
@@ -36,6 +37,8 @@ export default function WorkstationPage() {
   const [commentBody, setCommentBody] = useState("");
   const [includeTimestamp, setIncludeTimestamp] = useState(false);
   const [suggestion, setSuggestion] = useState("");
+  const [agendaSuggestions, setAgendaSuggestions] = useState<AgendaSuggestion[]>([]);
+  const [votedSuggestionIds, setVotedSuggestionIds] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const expanded = meetings.find((meeting) => meeting.id === expandedId) ?? null;
@@ -61,6 +64,20 @@ export default function WorkstationPage() {
     if (!expanded?.audioStoragePath) return;
     void getDownloadURL(ref(getFirebaseStorage(), expanded.audioStoragePath)).then(setAudioUrl).catch(() => setMessage("The meeting audio could not be loaded."));
   }, [expanded?.audioStoragePath]);
+  useEffect(() => {
+    if (!user || !expanded || expanded.status !== "upcoming") { setAgendaSuggestions([]); setVotedSuggestionIds(new Set()); return; }
+    return onSnapshot(collection(getFirebaseDb(), "meetings", expanded.id, "agendaSuggestions"), (snapshot) => {
+      setAgendaSuggestions(snapshot.docs.map((entry) => ({ id: entry.id, text: String(entry.data().text ?? ""), submittedByEmail: String(entry.data().submittedByEmail ?? ""), voteCount: Number(entry.data().voteCount ?? 0) })).sort((a, b) => b.voteCount - a.voteCount));
+    });
+  }, [expanded, user]);
+  useEffect(() => {
+    if (!user || !expanded || !agendaSuggestions.length) { setVotedSuggestionIds(new Set()); return; }
+    let active = true;
+    void Promise.all(agendaSuggestions.map(async (item) => ({ id: item.id, voted: (await getDoc(doc(getFirebaseDb(), "meetings", expanded.id, "agendaSuggestions", item.id, "votes", user.uid))).exists() }))).then((results) => {
+      if (active) setVotedSuggestionIds(new Set(results.filter((item) => item.voted).map((item) => item.id)));
+    });
+    return () => { active = false; };
+  }, [agendaSuggestions, expanded, user]);
 
   async function signIn() {
     const provider = new GoogleAuthProvider();
@@ -80,8 +97,26 @@ export default function WorkstationPage() {
   }
   async function suggestTopic(event: FormEvent) {
     event.preventDefault(); if (!user?.email || !expanded || !suggestion.trim()) return;
-    await addDoc(collection(getFirebaseDb(), "meetings", expanded.id, "agendaSuggestions"), { text: suggestion.trim(), submittedByEmail: user.email.toLowerCase(), createdAt: serverTimestamp() });
+    await addDoc(collection(getFirebaseDb(), "meetings", expanded.id, "agendaSuggestions"), { text: suggestion.trim(), submittedByEmail: user.email.toLowerCase(), createdAt: serverTimestamp(), voteCount: 0 });
     setSuggestion(""); setMessage("Topic suggested for the agenda.");
+  }
+  async function toggleSuggestionVote(item: AgendaSuggestion) {
+    if (!user || !expanded) return;
+    const db = getFirebaseDb();
+    const suggestionRef = doc(db, "meetings", expanded.id, "agendaSuggestions", item.id);
+    const voteRef = doc(db, "meetings", expanded.id, "agendaSuggestions", item.id, "votes", user.uid);
+    await runTransaction(db, async (transaction) => {
+      const [suggestionSnapshot, voteSnapshot] = await Promise.all([transaction.get(suggestionRef), transaction.get(voteRef)]);
+      if (!suggestionSnapshot.exists()) throw new Error("That suggestion no longer exists.");
+      const count = Number(suggestionSnapshot.data().voteCount ?? 0);
+      if (voteSnapshot.exists()) {
+        transaction.delete(voteRef);
+        transaction.update(suggestionRef, { voteCount: Math.max(0, count - 1) });
+      } else {
+        transaction.set(voteRef, { userId: user.uid, createdAt: serverTimestamp() });
+        transaction.update(suggestionRef, { voteCount: count + 1 });
+      }
+    });
   }
 
   if (!hasInitializedAuth || meetingsLoading) return <main className="grid min-h-screen place-items-center bg-[#090a09] text-white/55">Opening the workstation...</main>;
@@ -95,7 +130,7 @@ export default function WorkstationPage() {
         <section className="grid gap-7 border-b border-white/10 pb-10 lg:grid-cols-[1.2fr_0.8fr]"><div><p className="beam-eyebrow">{expanded.status} · {formatDate(expanded.dateISO)}</p><h1 className="beam-display mt-4 text-5xl leading-[0.92] sm:text-7xl">{expanded.title}</h1></div><div className="flex flex-col justify-end gap-4"><p className="text-sm leading-7 text-white/50">{expanded.agenda || "Agenda forthcoming."}</p>{expanded.status !== "upcoming" ? <button onClick={() => void toggleReviewed()} className={`rounded-2xl border p-4 text-left ${reviewed ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-200" : "border-white/15 bg-white/[0.03]"}`}>{reviewed ? "✓ You're caught up" : "○ Mark me as caught up"}</button> : null}{expanded.meetSpaceUri ? <a href={expanded.meetSpaceUri} target="_blank" rel="noreferrer" className="rounded-full bg-[var(--beam-gold)] px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-black">Join Google Meet ↗</a> : null}</div></section>
         {message ? <p className="mt-5 rounded-xl border border-white/10 p-3 text-sm text-white/65">{message}</p> : null}
         <div className="grid gap-8 py-8 lg:grid-cols-[minmax(0,1fr)_22rem]"><div className="space-y-7">
-          {expanded.status === "upcoming" ? <section className="beam-card rounded-[1.75rem] p-6 sm:p-8"><p className="beam-eyebrow">Shape the agenda</p><h2 className="beam-display mt-2 text-3xl">What should be in the room?</h2><p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-white/55">{expanded.agenda || "The agenda is still open."}</p><form onSubmit={suggestTopic} className="mt-6 flex gap-2"><input value={suggestion} onChange={(e) => setSuggestion(e.target.value)} placeholder="Suggest a topic or question" className="min-w-0 flex-1 rounded-full border border-white/15 bg-black/30 px-4 py-3 text-sm outline-none focus:border-[var(--beam-gold)]"/><button className="rounded-full bg-[var(--beam-gold)] px-5 text-xs font-semibold text-black">Suggest</button></form></section> : <>
+          {expanded.status === "upcoming" ? <section className="beam-card rounded-[1.75rem] p-6 sm:p-8"><p className="beam-eyebrow">Shape the agenda</p><h2 className="beam-display mt-2 text-3xl">What should be in the room?</h2><p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-white/55">{expanded.agenda || "The agenda is still open."}</p><form onSubmit={suggestTopic} className="mt-6 flex gap-2"><input value={suggestion} onChange={(e) => setSuggestion(e.target.value)} placeholder="Suggest a topic or question" className="min-w-0 flex-1 rounded-full border border-white/15 bg-black/30 px-4 py-3 text-sm outline-none focus:border-[var(--beam-gold)]"/><button className="rounded-full bg-[var(--beam-gold)] px-5 text-xs font-semibold text-black">Suggest</button></form><div className="mt-7 space-y-3">{agendaSuggestions.length ? agendaSuggestions.map((item) => { const voted = votedSuggestionIds.has(item.id); return <article key={item.id} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/20 p-4"><div className="min-w-0 flex-1"><p className="text-sm">{item.text}</p><p className="mt-1 text-[10px] text-white/35">Suggested by {item.submittedByEmail}</p></div><button type="button" aria-pressed={voted} onClick={() => void toggleSuggestionVote(item)} className={`rounded-full border px-4 py-2 text-xs ${voted ? "border-[var(--beam-gold)] bg-[var(--beam-gold)] text-black" : "border-white/15 text-white/65"}`}>{voted ? "Prioritized" : "Prioritize this"} · {item.voteCount}</button></article>; }) : <p className="text-xs text-white/35">No topics suggested yet. Add the first one.</p>}</div></section> : <>
             <section className="beam-card rounded-[1.75rem] p-6 sm:p-8"><div className="flex flex-wrap justify-between gap-4"><div><p className="beam-eyebrow">01 / Listen</p><h2 className="beam-display mt-2 text-3xl">Meeting overview</h2></div><div className="flex gap-1">{[1,1.25,1.5,2].map((option) => <button key={option} onClick={() => changeSpeed(option)} className={`rounded-full px-3 py-1.5 text-xs ${speed === option ? "bg-[var(--beam-gold)] text-black" : "bg-white/5 text-white/60"}`}>{option}x</button>)}</div></div>{audioUrl ? <audio ref={audioRef} src={audioUrl} controls className="mt-6 w-full"/> : <p className="mt-6 rounded-xl border border-amber-300/15 bg-amber-300/5 p-4 text-sm text-amber-100/65">Audio has not been uploaded for this meeting.</p>}</section>
             <section className="beam-card rounded-[1.75rem] p-6 sm:p-8"><p className="beam-eyebrow">02 / Skim</p><h2 className="beam-display mt-2 text-3xl">Key takeaways</h2><div className="mt-6 divide-y divide-white/10 border-y border-white/10">{expanded.takeaways.length ? expanded.takeaways.map((item,index) => <details key={`${item.heading}-${index}`} open={index===0} className="group py-5"><summary className="flex cursor-pointer list-none justify-between gap-4 font-medium"><span>{item.heading}</span><span className="text-[var(--beam-gold)]">+</span></summary><p className="mt-3 text-sm leading-7 text-white/55">{item.body}</p></details>) : <p className="py-5 text-sm text-white/40">Takeaways have not been added yet.</p>}</div></section>
             <section className="beam-card rounded-[1.75rem] p-6 sm:p-8"><div className="flex justify-between"><div><p className="beam-eyebrow">03 / Work</p><h2 className="beam-display mt-2 text-3xl">Live grant board</h2></div><Link href="/admin/grants" className="text-xs text-[var(--beam-gold)]">Admin ↗</Link></div>{grantsError ? <p className="mt-5 text-red-300">{grantsError.message}</p> : grantsLoading ? <p className="mt-5 text-white/40">Loading...</p> : <div className="mt-6 grid gap-3 sm:grid-cols-2">{grants.map((grant) => <article key={grant.id} className="rounded-2xl border border-white/10 bg-black/20 p-5"><span className="text-[10px] uppercase tracking-wider text-[var(--beam-gold)]">{grant.stages[0]?.label}</span><h3 className="mt-3 font-medium">{grant.title}</h3><p className="mt-3 text-xs leading-6 text-white/45">{grant.stages[0]?.note}</p></article>)}</div>}</section>

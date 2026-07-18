@@ -30,6 +30,8 @@ const meetings = [
     meetConferenceRecordId: null,
     transcriptStoragePath: null,
     recordingStoragePath: null,
+    transcriptDriveUri: null,
+    recordingDriveUri: null,
   },
   {
     id: "beam-nucleus-next-steps-2026-07",
@@ -46,6 +48,8 @@ const meetings = [
     meetConferenceRecordId: null,
     transcriptStoragePath: null,
     recordingStoragePath: null,
+    transcriptDriveUri: null,
+    recordingDriveUri: null,
   },
 ] as const;
 

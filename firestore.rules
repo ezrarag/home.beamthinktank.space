@@ -243,9 +243,33 @@ service cloud.firestore {
         allow create: if isSignedIn()
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0
-          && request.resource.data.submittedByEmail == request.auth.token.email;
-        allow update: if false;
+          && request.resource.data.submittedByEmail == request.auth.token.email
+          && request.resource.data.voteCount == 0;
+        // A vote transaction may only change the cached count by one and must
+        // atomically create/delete this user's matching vote document.
+        allow update: if isSignedIn()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['voteCount'])
+          && request.resource.data.voteCount is int
+          && request.resource.data.voteCount >= 0
+          && (
+            (request.resource.data.voteCount == resource.data.voteCount + 1
+              && !exists(/databases/$(database)/documents/meetings/$(meetingId)/agendaSuggestions/$(suggestionId)/votes/$(request.auth.uid))
+              && existsAfter(/databases/$(database)/documents/meetings/$(meetingId)/agendaSuggestions/$(suggestionId)/votes/$(request.auth.uid)))
+            ||
+            (request.resource.data.voteCount == resource.data.voteCount - 1
+              && exists(/databases/$(database)/documents/meetings/$(meetingId)/agendaSuggestions/$(suggestionId)/votes/$(request.auth.uid))
+              && !existsAfter(/databases/$(database)/documents/meetings/$(meetingId)/agendaSuggestions/$(suggestionId)/votes/$(request.auth.uid)))
+          );
         allow delete: if isAdmin();
+
+        match /votes/{userId} {
+          allow read: if isSignedIn();
+          allow create: if isSignedIn()
+            && userId == request.auth.uid
+            && request.resource.data.userId == request.auth.uid;
+          allow update: if false;
+          allow delete: if isSignedIn() && userId == request.auth.uid;
+        }
       }
 
       match /attendance/{userId} {

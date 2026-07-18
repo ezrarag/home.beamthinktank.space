@@ -20,4 +20,6 @@ export type BeamMeeting = {
   meetConferenceRecordId: string | null;
   transcriptStoragePath: string | null;
   recordingStoragePath: string | null;
+  transcriptDriveUri: string | null;
+  recordingDriveUri: string | null;
 };
