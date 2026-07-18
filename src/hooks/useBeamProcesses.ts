@@ -44,12 +44,19 @@ function normalizeProcess(id: string, data: DocumentData): BeamProcess {
   };
 }
 
-export function useBeamProcesses(domain?: BeamProcessDomain): UseBeamProcessesResult {
+export function useBeamProcesses(domain?: BeamProcessDomain, enabled: boolean = true): UseBeamProcessesResult {
   const [processes, setProcesses] = useState<BeamProcess[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    if (!enabled) {
+      setProcesses([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -73,7 +80,7 @@ export function useBeamProcesses(domain?: BeamProcessDomain): UseBeamProcessesRe
         setLoading(false);
       }
     );
-  }, [domain]);
+  }, [domain, enabled]);
 
   return { processes, loading, error };
 }

@@ -92,7 +92,7 @@ export default function AdminGrantsPage() {
   }
 
   // Only query processes if signed in
-  const { processes, loading, error } = useBeamProcesses(isSignedIn ? "grants" : undefined);
+  const { processes, loading, error } = useBeamProcesses(isSignedIn ? "grants" : undefined, isSignedIn);
 
   return (
     <main className="min-h-screen w-full bg-[#0e0e0e] text-white">

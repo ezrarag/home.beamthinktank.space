@@ -11,7 +11,6 @@ import {
   orderBy,
   query,
   serverTimestamp,
-  setDoc,
   Timestamp,
   updateDoc,
   type QueryDocumentSnapshot,
@@ -20,7 +19,6 @@ import {
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDb } from "@/lib/firebaseClient";
 import {
-  DEFAULT_WEBSITE_DIRECTORY_SEED,
   WEBSITE_DIRECTORY_COLLECTION,
   buildMicrolinkPreviewUrl,
   normalizeWebsiteDirectoryHost,
@@ -351,6 +349,17 @@ export default function WebsiteDirectoryAdminPage() {
       return;
     }
 
+    const normalizedHost = normalizeWebsiteDirectoryHost(normalized.url);
+    const duplicate = internalRows.find(
+      (entry) => entry.id !== editingId && normalizeWebsiteDirectoryHost(entry.url) === normalizedHost,
+    );
+    if (duplicate) {
+      setFormError(
+        `A managed entry for ${normalizedHost} already exists as “${duplicate.title}”. Edit that entry instead of creating a duplicate.`,
+      );
+      return;
+    }
+
     setFormError(null);
     setIsSubmitting(true);
     try {
@@ -492,46 +501,6 @@ export default function WebsiteDirectoryAdminPage() {
     }
   }
 
-  async function handleSeed() {
-    setRequestError(null);
-    try {
-      const auth = getFirebaseAuth();
-      const currentUser = auth.currentUser;
-      if (!currentUser && process.env.NODE_ENV !== "production") {
-        const db = getFirebaseDb();
-        const previewImageUrl =
-          DEFAULT_WEBSITE_DIRECTORY_SEED.previewImageUrl || buildMicrolinkPreviewUrl(DEFAULT_WEBSITE_DIRECTORY_SEED.url);
-        await setDoc(
-          doc(db, WEBSITE_DIRECTORY_COLLECTION, "beam-home-site"),
-          {
-            ...DEFAULT_WEBSITE_DIRECTORY_SEED,
-            previewImageUrl,
-            createdBy: getDevActor(),
-            updatedBy: getDevActor(),
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
-        await loadRows();
-        return;
-      }
-
-      const response = await fetch("/api/admin/website-directory/seed", {
-        method: "POST",
-        headers: await getAuthHeader(),
-      });
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(payload.error ?? "Failed to seed default entry");
-      }
-      await loadRows();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to seed default entry";
-      setRequestError(message);
-    }
-  }
-
   return (
     <main className="min-h-screen bg-[#111216] text-white px-4 py-10">
       <div className="mx-auto max-w-6xl space-y-6">
@@ -563,34 +532,28 @@ export default function WebsiteDirectoryAdminPage() {
         )}
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold">Website Directory</h1>
+            <h1 className="text-3xl font-semibold">Homepage Cards &amp; Website Directory</h1>
             <p className="text-sm text-neutral-300">
-              Internal entries come from Firestore. External BEAM sites are pulled as one canonical entry per Readyaimgo org, with extra deploy hosts shown as sync metadata instead of duplicate rows.
+              Managed, active entries become stacking cards on the homepage. Title controls the large card name, Label controls the small category, Subtitle is the description, and URL is the card destination.
+            </p>
+            <p className="mt-2 text-xs text-neutral-500">
+              Only one managed entry is allowed per website host. To change a card name or destination, edit its existing row.
             </p>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => void loadRows()}
-              className="rounded-md border border-[#2b2f36] px-3 py-2 text-sm hover:bg-white/5"
-              type="button"
-            >
-              Refresh
-            </button>
-            <button
-              onClick={() => void handleSeed()}
-              className="rounded-md border border-[#2b2f36] px-3 py-2 text-sm hover:bg-white/5"
-              type="button"
-            >
-              Seed Default Entry
-            </button>
-          </div>
+          <button
+            onClick={() => void loadRows()}
+            className="rounded-md border border-[#2b2f36] px-3 py-2 text-sm hover:bg-white/5"
+            type="button"
+          >
+            Refresh
+          </button>
         </header>
 
         <section className="rounded-xl border border-[#2b2f36] bg-[#161920] p-5">
           <h2 className="text-lg font-medium mb-4">{editingId ? "Edit Internal Entry" : "Create Internal Entry"}</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="flex flex-col gap-1 text-sm">
-              Label *
+              Card Category / Label *
               <input
                 className="rounded-md border border-[#2b2f36] bg-[#0f1117] px-3 py-2"
                 value={form.label}
@@ -600,7 +563,7 @@ export default function WebsiteDirectoryAdminPage() {
             </label>
 
             <label className="flex flex-col gap-1 text-sm">
-              Title *
+              Card Name / Title *
               <input
                 className="rounded-md border border-[#2b2f36] bg-[#0f1117] px-3 py-2"
                 value={form.title}
@@ -610,7 +573,7 @@ export default function WebsiteDirectoryAdminPage() {
             </label>
 
             <label className="flex flex-col gap-1 text-sm md:col-span-2">
-              Subtitle
+              Card Description / Subtitle
               <input
                 className="rounded-md border border-[#2b2f36] bg-[#0f1117] px-3 py-2"
                 value={form.subtitle}

@@ -212,6 +212,28 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Shared catch-up workspace. Comments are visible to signed-in collaborators;
+    // authors retain control of their own posts and admins can moderate.
+    match /workstationComments/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.meetingId is string
+        && request.resource.data.body is string
+        && request.resource.data.body.size() > 0;
+      allow update, delete: if isSignedIn()
+        && (request.auth.uid == resource.data.userId || isAdmin());
+    }
+
+    // One durable review marker per user and meeting.
+    match /workstationReviews/{docId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+
     // Canonical participant identity and membership layer.
     match /organizations/{docId} {
       allow read, create, update, delete: if isAdmin();

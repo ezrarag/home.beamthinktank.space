@@ -218,19 +218,8 @@ html {
 .division-stack__brand {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-}
-
-.division-stack__brand > span:first-child {
-  display: grid;
-  width: 2.5rem;
-  height: 2.5rem;
-  place-items: center;
-  border: 1px solid rgba(200, 185, 122, 0.35);
-  border-radius: 50%;
-  color: var(--beam-gold-bright);
-  font-family: var(--font-display);
-  font-size: 1.15rem;
+  color: var(--beam-text-primary);
+  letter-spacing: 0.16em;
 }
 
 .division-stack__intro-copy {

@@ -61,7 +61,7 @@ export default function AdminLawPage() {
   }
 
   // Only query processes if signed in
-  const { processes, loading, error } = useBeamProcesses(isSignedIn ? "law" : undefined);
+  const { processes, loading, error } = useBeamProcesses(isSignedIn ? "law" : undefined, isSignedIn);
 
   return (
     <main className="min-h-screen w-full bg-[#0e0e0e] text-white">

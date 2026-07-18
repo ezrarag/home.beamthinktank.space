@@ -61,7 +61,7 @@ export default function AdminArchitecturePage() {
   }
 
   // Only query processes if signed in
-  const { processes, loading, error } = useBeamProcesses(isSignedIn ? "architecture" : undefined);
+  const { processes, loading, error } = useBeamProcesses(isSignedIn ? "architecture" : undefined, isSignedIn);
 
   return (
     <main className="min-h-screen w-full bg-[#0e0e0e] text-white">

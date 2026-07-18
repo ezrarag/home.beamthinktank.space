@@ -42,6 +42,61 @@ export const DEFAULT_WEBSITE_DIRECTORY_SEED: WebsiteDirectoryInput = {
   isActive: true,
 };
 
+// These records power the public stacking cards. Once seeded, every field is
+// editable from Admin > Website Directory without another code change.
+export const DEFAULT_HOMEPAGE_CARDS: Array<WebsiteDirectoryInput & { id: string }> = [
+  {
+    id: "homepage-forge",
+    label: "Venture & systems studio",
+    title: "Forge",
+    subtitle: "A working studio for turning public-interest ideas into durable tools, programs, and institutions.",
+    url: "https://forge.beamthinktank.space",
+    previewImageUrl: "",
+    sortOrder: 1,
+    isActive: true,
+  },
+  {
+    id: "homepage-grounds",
+    label: "Local knowledge commons",
+    title: "Grounds",
+    subtitle: "Place-based intelligence shaped by the people, histories, and conditions that define a community.",
+    url: "https://grounds.beamthinktank.space",
+    previewImageUrl: "",
+    sortOrder: 2,
+    isActive: true,
+  },
+  {
+    id: "homepage-orchestra",
+    label: "Collective action engine",
+    title: "Orchestra",
+    subtitle: "Coordinated action across disciplines—aligning contributors, resources, and timing around shared outcomes.",
+    url: "https://orchestra.beamthinktank.space",
+    previewImageUrl: "",
+    sortOrder: 3,
+    isActive: true,
+  },
+  {
+    id: "homepage-network",
+    label: "People & place infrastructure",
+    title: "Network",
+    subtitle: "A living map of people and organizations moving practical knowledge between cities and sectors.",
+    url: "https://network.beamthinktank.space",
+    previewImageUrl: "",
+    sortOrder: 4,
+    isActive: true,
+  },
+  {
+    id: "homepage-research",
+    label: "Evidence & policy",
+    title: "Research",
+    subtitle: "Independent inquiry that translates complex evidence into clear choices for local leaders and communities.",
+    url: "https://research.beamthinktank.space",
+    previewImageUrl: "",
+    sortOrder: 5,
+    isActive: true,
+  },
+];
+
 function isValidAbsoluteHttpUrl(value: string): boolean {
   try {
     const parsed = new URL(value);

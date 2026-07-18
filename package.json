@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed:use-cases": "node --env-file=.env.local ./node_modules/tsx/dist/cli.mjs scripts/seed-use-cases.ts",
+    "seed:grants": "node --env-file=.env.local ./node_modules/tsx/dist/cli.mjs scripts/seedGrantProcesses.ts",
     "audit:firestore": "node --env-file=.env.local ./node_modules/tsx/dist/cli.mjs scripts/audit-firestore.ts"
   },
   "dependencies": {

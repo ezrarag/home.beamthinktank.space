@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { buildMicrolinkPreviewUrl, WEBSITE_DIRECTORY_COLLECTION, type WebsiteDirectoryEntry } from "@/lib/websiteDirectory";
+import {
+  buildMicrolinkPreviewUrl,
+  dedupeWebsiteDirectoryEntries,
+  WEBSITE_DIRECTORY_COLLECTION,
+  type WebsiteDirectoryEntry,
+} from "@/lib/websiteDirectory";
 
 interface FirestoreDocument {
   name: string;
@@ -58,8 +63,7 @@ export async function GET() {
 
     const json = (await response.json()) as FirestoreListResponse;
     const docs = Array.isArray(json.documents) ? json.documents : [];
-    const entries = docs
-      .map(mapFirestoreDocToEntry)
+    const entries = dedupeWebsiteDirectoryEntries(docs.map(mapFirestoreDocToEntry))
       .filter((entry) => entry.isActive)
       .sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title));
 
