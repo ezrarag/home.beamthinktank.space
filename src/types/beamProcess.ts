@@ -24,6 +24,7 @@ export interface BeamProcess {
   linkedEntityType?: string;
   stages: BeamProcessStage[];
   funding?: BeamProcessFunding;
+  grantOpportunity?: import("./grantOpportunity").BeamGrantMapping;
   createdAt: string;
   updatedAt: string;
 }
