@@ -23,4 +23,9 @@ export type BeamMeeting = {
   recordingStoragePath: string | null;
   transcriptDriveUri: string | null;
   recordingDriveUri: string | null;
+  sourceFolderUri: string | null;
+  recordingDriveFileId: string | null;
+  transcriptDriveFileId: string | null;
+  sourceRevision: string | null;
+  sourceImportedAt: string | null;
 };

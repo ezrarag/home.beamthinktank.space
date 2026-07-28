@@ -26,6 +26,11 @@ function normalizeMeeting(id: string, data: DocumentData): BeamMeeting {
     recordingStoragePath: typeof data.recordingStoragePath === "string" ? data.recordingStoragePath : null,
     transcriptDriveUri: typeof data.transcriptDriveUri === "string" ? data.transcriptDriveUri : null,
     recordingDriveUri: typeof data.recordingDriveUri === "string" ? data.recordingDriveUri : null,
+    sourceFolderUri: typeof data.sourceFolderUri === "string" ? data.sourceFolderUri : null,
+    recordingDriveFileId: typeof data.recordingDriveFileId === "string" ? data.recordingDriveFileId : null,
+    transcriptDriveFileId: typeof data.transcriptDriveFileId === "string" ? data.transcriptDriveFileId : null,
+    sourceRevision: typeof data.sourceRevision === "string" ? data.sourceRevision : null,
+    sourceImportedAt: typeof data.sourceImportedAt === "string" ? data.sourceImportedAt : null,
   };
 }
 
