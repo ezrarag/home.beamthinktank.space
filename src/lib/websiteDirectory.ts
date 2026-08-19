@@ -42,57 +42,66 @@ export const DEFAULT_WEBSITE_DIRECTORY_SEED: WebsiteDirectoryInput = {
   isActive: true,
 };
 
-// These records power the public stacking cards. Once seeded, every field is
-// editable from Admin > Website Directory without another code change.
+// These records power the public stacking cards and compact grid.
 export const DEFAULT_HOMEPAGE_CARDS: Array<WebsiteDirectoryInput & { id: string }> = [
+  {
+    id: "homepage-home",
+    label: "Ecosystem platform & hub",
+    title: "BEAM Home",
+    subtitle: "Independent inquiry and coordinated action uniting spatial commons, cultural labor, municipal law, and community banking into a unified civic operating system.",
+    url: "https://beamthinktank.space",
+    previewImageUrl: "",
+    sortOrder: 1,
+    isActive: true,
+  },
   {
     id: "homepage-forge",
     label: "Venture & systems studio",
     title: "Forge",
-    subtitle: "A working studio for turning public-interest ideas into durable tools, programs, and institutions.",
+    subtitle: "A working studio for turning public-interest ideas into durable tools, software infrastructure, and community institutions.",
     url: "https://forge.beamthinktank.space",
     previewImageUrl: "",
-    sortOrder: 1,
+    sortOrder: 2,
     isActive: true,
   },
   {
     id: "homepage-grounds",
     label: "Local knowledge commons",
     title: "Grounds",
-    subtitle: "Place-based intelligence shaped by the people, histories, and conditions that define a community.",
+    subtitle: "Place-based spatial intelligence, food commons mapping, and community knowledge shaped by local histories and physical geography.",
     url: "https://grounds.beamthinktank.space",
-    previewImageUrl: "",
-    sortOrder: 2,
-    isActive: true,
-  },
-  {
-    id: "homepage-orchestra",
-    label: "Collective action engine",
-    title: "Orchestra",
-    subtitle: "Coordinated action across disciplines—aligning contributors, resources, and timing around shared outcomes.",
-    url: "https://orchestra.beamthinktank.space",
     previewImageUrl: "",
     sortOrder: 3,
     isActive: true,
   },
   {
-    id: "homepage-network",
-    label: "People & place infrastructure",
-    title: "Network",
-    subtitle: "A living map of people and organizations moving practical knowledge between cities and sectors.",
-    url: "https://network.beamthinktank.space",
+    id: "homepage-orchestra",
+    label: "Collective action & cultural labor engine",
+    title: "Orchestra",
+    subtitle: "Coordinated action across disciplines—aligning contributors, musician rosters, and uncompensated artistic value around shared cultural outcomes.",
+    url: "https://orchestra.beamthinktank.space",
     previewImageUrl: "",
     sortOrder: 4,
     isActive: true,
   },
   {
-    id: "homepage-research",
-    label: "Evidence & policy",
-    title: "Research",
-    subtitle: "Independent inquiry that translates complex evidence into clear choices for local leaders and communities.",
-    url: "https://research.beamthinktank.space",
+    id: "homepage-law",
+    label: "Municipal law & penal code analysis",
+    title: "Law",
+    subtitle: "Contextualizing municipal codes, public easement rights, and penal statutes that criminalize basic biological survival in urban corridors.",
+    url: "https://law.beamthinktank.space",
     previewImageUrl: "",
     sortOrder: 5,
+    isActive: true,
+  },
+  {
+    id: "homepage-fcu",
+    label: "Community credit & micro-underwriting",
+    title: "BEAM FCU",
+    subtitle: "Converting uncompensated community capital and unrecorded cultural labor into actionable financial tools, credit reserves, and micro-underwriting.",
+    url: "https://www.beamfcu.com",
+    previewImageUrl: "",
+    sortOrder: 6,
     isActive: true,
   },
 ];
@@ -155,21 +164,6 @@ export function normalizeWebsiteDirectoryHost(value: string): string | null {
   return null;
 }
 
-function compareWebsiteDirectoryEntries(a: WebsiteDirectoryEntry, b: WebsiteDirectoryEntry): number {
-  const sourceRank = (entry: WebsiteDirectoryEntry) => (entry.source === "internal" ? 2 : 1);
-  const bySource = sourceRank(b) - sourceRank(a);
-  if (bySource !== 0) return bySource;
-
-  if (a.isActive !== b.isActive) {
-    return a.isActive ? -1 : 1;
-  }
-
-  const bySortOrder = a.sortOrder - b.sortOrder;
-  if (bySortOrder !== 0) return bySortOrder;
-
-  return a.title.localeCompare(b.title);
-}
-
 export function dedupeWebsiteDirectoryEntries(entries: WebsiteDirectoryEntry[]): WebsiteDirectoryEntry[] {
   const byKey = new Map<string, WebsiteDirectoryEntry>();
 
@@ -184,6 +178,21 @@ export function dedupeWebsiteDirectoryEntries(entries: WebsiteDirectoryEntry[]):
   }
 
   return [...byKey.values()];
+}
+
+function compareWebsiteDirectoryEntries(a: WebsiteDirectoryEntry, b: WebsiteDirectoryEntry): number {
+  const sourceRank = (entry: WebsiteDirectoryEntry) => (entry.source === "internal" ? 2 : 1);
+  const bySource = sourceRank(b) - sourceRank(a);
+  if (bySource !== 0) return bySource;
+
+  if (a.isActive !== b.isActive) {
+    return a.isActive ? -1 : 1;
+  }
+
+  const bySortOrder = a.sortOrder - b.sortOrder;
+  if (bySortOrder !== 0) return bySortOrder;
+
+  return a.title.localeCompare(b.title);
 }
 
 export function resolvePreviewImageUrl(url: string, previewImageUrl?: string): string {

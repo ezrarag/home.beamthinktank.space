@@ -5,7 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { GoogleAuthProvider, signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
 import { useAuthStore } from "@/store/authStore";
+import { useTelemetryStore } from "@/store/telemetryStore";
 import { DEFAULT_HOMEPAGE_CARDS, type WebsiteDirectoryEntry } from "@/lib/websiteDirectory";
+import { SurvivalTelemetryModal } from "@/components/hud/SurvivalTelemetryModal";
+import { ProfileMaturationModal } from "@/components/hud/ProfileMaturationModal";
 
 const CARD_PALETTE = [
   { color: "#171a17", accent: "#d6b77a" },
@@ -43,6 +46,8 @@ export function DivisionStack() {
   const [signInError, setSignInError] = useState<string | null>(null);
 
   const { user, logout } = useAuthStore();
+  const { openTelemetryModal } = useTelemetryStore();
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +58,7 @@ export function DivisionStack() {
         const response = await fetch("/api/website-directory/internal", { cache: "no-store" });
         if (!response.ok) return;
         const payload = (await response.json()) as { entries?: WebsiteDirectoryEntry[] };
-        const entries = (payload.entries ?? []).filter((entry) => entry.title !== "BEAM Home Site");
+        const entries = (payload.entries ?? []);
         if (!cancelled && entries.length > 0) setDivisions(entries);
       } catch {
         // The curated fallback keeps the public homepage usable during an API outage.
@@ -116,10 +121,26 @@ export function DivisionStack() {
   return (
     <section className="division-stack" aria-labelledby="divisions-heading">
       <div className="division-stack__intro">
+        {/* Primary Navigation with Top-Left Telemetry Option */}
         <nav className="division-stack__nav" aria-label="Primary navigation">
-          <Link href="/" className="division-stack__brand" aria-label="BEAM home">
-            <span>BEAM Think Tank</span>
-          </Link>
+          <div className="flex items-center space-x-6">
+            <Link href="/" className="division-stack__brand" aria-label="BEAM home">
+              <span>BEAM Think Tank</span>
+            </Link>
+            <span className="text-white/20 hidden sm:inline">|</span>
+            <button
+              type="button"
+              onClick={openTelemetryModal}
+              className="hidden sm:inline-flex items-center space-x-2 text-xs font-mono uppercase tracking-widest text-[var(--beam-gold)] hover:text-white transition cursor-pointer"
+            >
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--beam-gold)] opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[var(--beam-gold)]" />
+              </span>
+              <span>Live Telemetry HUD</span>
+            </button>
+          </div>
+
           {user ? (
             <div ref={dropdownRef} className="relative inline-block text-left">
               <button
@@ -196,24 +217,52 @@ export function DivisionStack() {
               )}
             </div>
           ) : (
-            <button type="button" onClick={() => void handleSignIn()} className="rounded-full bg-[var(--beam-gold)] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-black transition hover:bg-[var(--beam-gold-bright)]">
+            <button
+              type="button"
+              onClick={() => void handleSignIn()}
+              className="rounded-full bg-[var(--beam-gold)] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-black transition hover:bg-[var(--beam-gold-bright)]"
+            >
               Sign In
             </button>
           )}
         </nav>
         {signInError ? <p className="absolute right-[6vw] top-20 text-xs text-red-300">{signInError}</p> : null}
-        <div className="division-stack__intro-copy">
+
+        {/* Hero Copy */}
+        <div className="division-stack__intro-copy mt-8">
           <p className="beam-eyebrow">One institution · many instruments</p>
           <h1 id="divisions-heading" className="beam-display">
             Explore the BEAM ecosystem.
           </h1>
+
           <div className="division-stack__intro-footer">
             <p>Independent inquiry and coordinated action for stronger local systems.</p>
-            <a href="#division-1">Scroll to explore <span aria-hidden="true">↓</span></a>
+
+            <div className="flex items-center space-x-6">
+              <button
+                type="button"
+                onClick={openTelemetryModal}
+                className="inline-flex items-center space-x-2 text-xs font-mono uppercase tracking-widest text-[var(--beam-gold)] hover:text-white transition cursor-pointer"
+              >
+                <span>Live Survival Telemetry 📡</span>
+              </button>
+              <a
+                href="#division-1"
+                className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[var(--beam-gold)] hover:text-white transition"
+              >
+                <span>Scroll to explore</span>
+                <span aria-hidden="true">↓</span>
+              </a>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Pop-Up Modals */}
+      <SurvivalTelemetryModal />
+      <ProfileMaturationModal />
+
+      {/* Standardized Full-Bleed Division Deep-Dive Slides */}
       <div className="division-stack__cards">
         {divisions.map((division, index) => {
           const isCovered = index < activeIndex;
