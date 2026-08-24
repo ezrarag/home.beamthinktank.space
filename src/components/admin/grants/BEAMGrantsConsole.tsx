@@ -30,6 +30,8 @@ const DEFAULT_EXPLAINER_CLIPS: ExplainerClip[] = [
     durationSeconds: 5,
     durationLabel: "0:05",
     targetSectionId: "console-hero",
+    mediaUrl:
+      "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/admin-grants%2Fclip1.mp4?alt=media&token=e46b12ed-54da-4156-af7b-b8e3a8996e1a",
   },
   {
     id: "clip-2",
@@ -37,6 +39,8 @@ const DEFAULT_EXPLAINER_CLIPS: ExplainerClip[] = [
     durationSeconds: 6,
     durationLabel: "0:06",
     targetSectionId: "context-sources-card",
+    mediaUrl:
+      "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/admin-grants%2Fclip2.mp4?alt=media&token=6fd0aa75-bca5-473b-8a06-240b525cfde4",
   },
   {
     id: "clip-3",
@@ -44,6 +48,8 @@ const DEFAULT_EXPLAINER_CLIPS: ExplainerClip[] = [
     durationSeconds: 5,
     durationLabel: "0:05",
     targetSectionId: "score-command",
+    mediaUrl:
+      "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/admin-grants%2Fclip3.mp4?alt=media&token=0603eb68-e1cd-49c7-8212-cd4cba65784d",
   },
   {
     id: "clip-4",
@@ -51,6 +57,8 @@ const DEFAULT_EXPLAINER_CLIPS: ExplainerClip[] = [
     durationSeconds: 7,
     durationLabel: "0:07",
     targetSectionId: "slash-bar",
+    mediaUrl:
+      "https://firebasestorage.googleapis.com/v0/b/beam-home.firebasestorage.app/o/admin-grants%2Fclip4.mp4?alt=media&token=c6f22317-48d5-45b4-8a81-f41dd21c4c3f",
   },
 ];
 
@@ -70,7 +78,7 @@ export function BEAMGrantsConsole({
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isExplainerOpen, setIsExplainerOpen] = useState(false);
   const [activeClipId, setActiveClipId] = useState<string | null>(null);
-  const [isAudioOnly, setIsAudioOnly] = useState(true);
+  const [isAudioOnly, setIsAudioOnly] = useState(false);
 
   // Typewriter Animation State
   const [placeholderText, setPlaceholderText] = useState("");
@@ -156,10 +164,12 @@ export function BEAMGrantsConsole({
     setCommandInput(command + " ");
   };
 
-  // Caret Animation Class: Opacity-only blinking (~1.06s cycle), static under reducedMotion
+  // Caret Animation Class
   const caretClass = reducedMotion
     ? "opacity-100"
     : "animate-[beamCaret_1.06s_step-end_infinite]";
+
+  const activeClip = DEFAULT_EXPLAINER_CLIPS.find((c) => c.id === activeClipId);
 
   // 1. STATE B (Collapsed Slim Top Bar)
   if (isCollapsed) {
@@ -216,17 +226,43 @@ export function BEAMGrantsConsole({
 
             {/* Explainer Dropdown Menu */}
             {isExplainerOpen && (
-              <div className="absolute top-10 right-0 z-50 w-80 rounded-lg border border-[#23221a] bg-[#0c0c08] p-1 shadow-2xl transition-all">
+              <div className="absolute top-10 right-0 z-50 w-80 sm:w-96 rounded-xl border border-[#23221a] bg-[#0c0c08] p-1.5 shadow-2xl transition-all">
                 <div className="flex items-center justify-between border-b border-[#16160f] px-3 py-2 text-[9px] uppercase tracking-widest text-[#3a3428]">
                   <span>EXPLAINERS</span>
                   <button
                     type="button"
                     onClick={() => setIsAudioOnly(!isAudioOnly)}
-                    className="text-[#6f685a] hover:text-[#c8b97a] transition"
+                    className="text-[#6f685a] hover:text-[#c8b97a] transition cursor-pointer"
                   >
                     {isAudioOnly ? "audio only [✓]" : "audio + video"}
                   </button>
                 </div>
+
+                {/* Active Video Player View */}
+                {activeClip && activeClip.mediaUrl && (
+                  <div className="p-2 border-b border-[#16160f] space-y-2 bg-black/60 rounded-lg my-1">
+                    <div className="flex items-center justify-between text-[10px] text-[var(--beam-gold)]">
+                      <span className="font-bold">NOW PLAYING: {activeClip.title}</span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveClipId(null)}
+                        className="text-[#6f685a] hover:text-white"
+                      >
+                        [Close ✕]
+                      </button>
+                    </div>
+                    {isAudioOnly ? (
+                      <audio controls autoPlay src={activeClip.mediaUrl} className="w-full h-8" />
+                    ) : (
+                      <video
+                        controls
+                        autoPlay
+                        src={activeClip.mediaUrl}
+                        className="w-full h-48 rounded border border-white/10 object-cover"
+                      />
+                    )}
+                  </div>
+                )}
 
                 <div className="divide-y divide-[#101009] font-sans">
                   {DEFAULT_EXPLAINER_CLIPS.map((clip) => {
@@ -236,7 +272,7 @@ export function BEAMGrantsConsole({
                         key={clip.id}
                         type="button"
                         onClick={() => setActiveClipId(isPlaying ? null : clip.id)}
-                        className={`w-full flex items-center justify-between px-3 py-2.5 text-left text-xs transition ${
+                        className={`w-full flex items-center justify-between px-3 py-2.5 text-left text-xs transition cursor-pointer ${
                           isPlaying
                             ? "bg-[rgba(200,185,122,0.12)] text-[#f0ead6]"
                             : "text-[#a29885] hover:bg-white/5 hover:text-white"

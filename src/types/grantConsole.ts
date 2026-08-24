@@ -35,6 +35,7 @@ export interface ExplainerClip {
   durationSeconds: number;
   durationLabel: string;
   targetSectionId: string;
+  mediaUrl?: string;
   audioUrl?: string;
   isPlaying?: boolean;
 }
