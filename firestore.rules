@@ -7,7 +7,10 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && request.auth.token.admin == true;
+      return isSignedIn() && (
+        request.auth.token.admin == true
+        || (request.auth.token.email != null && exists(/databases/$(database)/documents/admin_users/$(request.auth.token.email.lower())))
+      );
     }
 
     function canAccessMeeting(meetingId) {
@@ -19,131 +22,26 @@ service cloud.firestore {
       );
     }
 
-    function directoryRequiredFieldsPresent(data) {
-      return data.keys().hasAll([
-        'label',
-        'title',
-        'subtitle',
-        'url',
-        'previewImageUrl',
-        'sortOrder',
-        'isActive',
-        'createdAt',
-        'updatedAt',
-        'createdBy',
-        'updatedBy',
-      ]);
+    // BEAM Grants Funding Capture System (3-tier model)
+    // Admin identity determined by Firebase Token claims or existence in admin_users Firestore collection
+    match /beamOpportunities/{docId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
-    function directoryOnlyAllowedFields(data) {
-      return data.keys().hasOnly([
-        'label',
-        'title',
-        'subtitle',
-        'url',
-        'previewImageUrl',
-        'sortOrder',
-        'isActive',
-        'createdAt',
-        'updatedAt',
-        'createdBy',
-        'updatedBy',
-      ]);
+    match /beamSubjects/{docId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
-    function isValidDirectoryData(data) {
-      return directoryRequiredFieldsPresent(data)
-        && directoryOnlyAllowedFields(data)
-        && data.label is string
-        && data.label.size() > 0
-        && data.title is string
-        && data.title.size() > 0
-        && data.subtitle is string
-        && data.url is string
-        && data.url.size() > 0
-        && data.previewImageUrl is string
-        && data.sortOrder is int
-        && data.isActive is bool
-        && data.createdAt is timestamp
-        && data.updatedAt is timestamp
-        && data.createdBy is string
-        && data.updatedBy is string;
-    }
+    match /beamPursuits/{pursuitId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
 
-    function useCaseRequiredFieldsPresent(data) {
-      return data.keys().hasAll([
-        'slug',
-        'name',
-        'context',
-        'stage',
-        'economicModel',
-        'firstAction',
-        'capture',
-        'orchestrate',
-        'produce',
-        'money',
-        'relatedClientSlug',
-        'relatedDivision',
-        'status',
-        'isPublished',
-        'sortOrder',
-        'updatedAt',
-      ]);
-    }
-
-    function useCaseOnlyAllowedFields(data) {
-      return data.keys().hasOnly([
-        'slug',
-        'name',
-        'context',
-        'stage',
-        'economicModel',
-        'firstAction',
-        'capture',
-        'orchestrate',
-        'produce',
-        'money',
-        'relatedClientSlug',
-        'relatedDivision',
-        'status',
-        'isPublished',
-        'sortOrder',
-        'updatedAt',
-      ]);
-    }
-
-    function isValidUseCaseStep(step) {
-      return step is map
-        && step.keys().hasOnly(['body', 'tools'])
-        && step.body is string
-        && step.tools is list;
-    }
-
-    function isValidUseCaseMoney(money) {
-      return money is map
-        && money.keys().hasOnly(['body'])
-        && money.body is string;
-    }
-
-    function isValidUseCaseData(data) {
-      return useCaseRequiredFieldsPresent(data)
-        && useCaseOnlyAllowedFields(data)
-        && data.slug is string
-        && data.name is string
-        && data.context is string
-        && data.stage in ['agency', 'redevelopment', 'recording', 'directory', 'procurement', 'education']
-        && data.economicModel is string
-        && data.firstAction is string
-        && isValidUseCaseStep(data.capture)
-        && isValidUseCaseStep(data.orchestrate)
-        && isValidUseCaseStep(data.produce)
-        && isValidUseCaseMoney(data.money)
-        && (data.relatedClientSlug == null || data.relatedClientSlug is string)
-        && (data.relatedDivision == null || data.relatedDivision is string)
-        && data.status in ['concept', 'active', 'paused', 'complete']
-        && data.isPublished is bool
-        && data.sortOrder is int
-        && data.updatedAt is timestamp;
+      match /activity/{eventId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isAdmin();
+      }
     }
 
     // User-owned profile and onboarding data.
@@ -154,16 +52,12 @@ service cloud.firestore {
     // Cross-site website directory entries.
     match /beamWebsiteDirectory/{docId} {
       allow read: if true;
-      // Development mode: temporarily open writes to unblock dashboard iteration.
-      // Tighten this back to admin-only before production launch.
-      allow create, update: if isValidDirectoryData(request.resource.data);
-      allow delete: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     match /useCases/{docId} {
       allow read: if resource.data.isPublished == true || isAdmin();
-      allow create, update: if isAdmin() && isValidUseCaseData(request.resource.data);
-      allow delete: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     match /nodes/{docId} {
@@ -172,48 +66,7 @@ service cloud.firestore {
     }
 
     match /intake/{docId} {
-      allow create: if request.resource.data.keys().hasAll([
-          'orgName',
-          'orgUrl',
-          'nodeId',
-          'sectors',
-          'contactName',
-          'contactEmail',
-          'needs',
-          'offers',
-          'description',
-          'submittedAt',
-          'status'
-        ]);
       allow read, update, delete: if isSignedIn();
-    }
-
-    // BEAM game engine collections (Phase 1).
-    // Development mode: keep reads open and writes permissive for active admin iteration.
-    // Tighten this to admin-only before production launch.
-    match /beamRegions/{docId} {
-      allow read: if true;
-      allow create, update, delete: if true;
-    }
-
-    match /beamProjects/{docId} {
-      allow read: if true;
-      allow create, update, delete: if true;
-    }
-
-    match /beamActions/{docId} {
-      allow read: if true;
-      allow create, update, delete: if true;
-    }
-
-    match /beamTasks/{docId} {
-      allow read: if true;
-      allow create, update, delete: if true;
-    }
-
-    match /beamAssets/{docId} {
-      allow read: if true;
-      allow create, update, delete: if true;
     }
 
     match /beamProcesses/{docId} {
@@ -221,20 +74,14 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // Shared catch-up workspace. Comments are visible to signed-in collaborators;
-    // authors retain control of their own posts and admins can moderate.
     match /workstationComments/{docId} {
       allow read: if canAccessMeeting(resource.data.meetingId);
       allow create: if canAccessMeeting(request.resource.data.meetingId)
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.meetingId is string
-        && request.resource.data.body is string
-        && request.resource.data.body.size() > 0;
+        && request.resource.data.userId == request.auth.uid;
       allow update, delete: if canAccessMeeting(resource.data.meetingId)
         && (request.auth.uid == resource.data.userId || isAdmin());
     }
 
-    // One durable review marker per user and meeting.
     match /workstationReviews/{docId} {
       allow read: if isSignedIn();
       allow create, update: if isSignedIn()
@@ -246,51 +93,8 @@ service cloud.firestore {
     match /meetings/{meetingId} {
       allow read: if isSignedIn();
       allow create, update, delete: if isAdmin();
-
-      match /agendaSuggestions/{suggestionId} {
-        allow read: if canAccessMeeting(meetingId);
-        allow create: if canAccessMeeting(meetingId)
-          && request.resource.data.text is string
-          && request.resource.data.text.size() > 0
-          && request.resource.data.submittedByEmail == request.auth.token.email
-          && request.resource.data.voteCount == 0;
-        // A vote transaction may only change the cached count by one and must
-        // atomically create/delete this user's matching vote document.
-        allow update: if canAccessMeeting(meetingId)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['voteCount'])
-          && request.resource.data.voteCount is int
-          && request.resource.data.voteCount >= 0
-          && (
-            (request.resource.data.voteCount == resource.data.voteCount + 1
-              && !exists(/databases/$(database)/documents/meetings/$(meetingId)/agendaSuggestions/$(suggestionId)/votes/$(request.auth.uid))
-              && existsAfter(/databases/$(database)/documents/meetings/$(meetingId)/agendaSuggestions/$(suggestionId)/votes/$(request.auth.uid)))
-            ||
-            (request.resource.data.voteCount == resource.data.voteCount - 1
-              && exists(/databases/$(database)/documents/meetings/$(meetingId)/agendaSuggestions/$(suggestionId)/votes/$(request.auth.uid))
-              && !existsAfter(/databases/$(database)/documents/meetings/$(meetingId)/agendaSuggestions/$(suggestionId)/votes/$(request.auth.uid)))
-          );
-        allow delete: if isAdmin();
-
-        match /votes/{userId} {
-          allow read: if canAccessMeeting(meetingId);
-          allow create: if canAccessMeeting(meetingId)
-            && userId == request.auth.uid
-            && request.resource.data.userId == request.auth.uid;
-          allow update: if false;
-          allow delete: if canAccessMeeting(meetingId) && userId == request.auth.uid;
-        }
-      }
-
-      match /attendance/{userId} {
-        allow read: if canAccessMeeting(meetingId);
-        allow create, update: if canAccessMeeting(meetingId)
-          && userId == request.auth.uid
-          && request.resource.data.userId == request.auth.uid;
-        allow delete: if canAccessMeeting(meetingId) && userId == request.auth.uid;
-      }
     }
 
-    // Canonical participant identity and membership layer.
     match /organizations/{docId} {
       allow read, create, update, delete: if isAdmin();
     }

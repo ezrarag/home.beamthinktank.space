@@ -1,132 +1,447 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebaseClient";
-import { useBeamProcesses } from "@/hooks/useBeamProcesses";
-import { BeamProcessLadder } from "@/components/BeamProcessLadder";
-import { BeamProcessEditor } from "@/components/BeamProcessEditor";
-import { upsertBeamProcess, deleteBeamProcess } from "@/lib/beamProcesses";
-import type { BeamProcess } from "@/types/beamProcess";
-import type { GrantDecision, GrantOpportunityDetail, GrantSearchResult } from "@/types/grantOpportunity";
-
-const FUNDING_CATEGORIES = [
-  ["", "All categories"], ["CD", "Community development"], ["ED", "Education"], ["HL", "Health"], ["HO", "Housing"],
-  ["ENV", "Environment"], ["AR", "Arts"], ["ST", "Science & research"], ["T", "Transportation"], ["LJL", "Law & justice"],
-] as const;
-
-const PIPELINE_STAGES = [
-  ["qualify", "Qualify"], ["go-no-go", "Go / No-Go"], ["capture", "Capture"], ["develop", "Develop"],
-  ["submit", "Submit"], ["award", "Award"], ["steward", "Steward"],
-] as const;
-
-type WorkspaceView = "discovery" | "pipeline" | "method";
-type Assessment = { owner: string; decision: GrantDecision; strategicFit: number; eligibilityConfidence: number; relationshipStrength: number; effortLevel: number; rationale: string };
-
-const DEFAULT_ASSESSMENT: Assessment = { owner: "TBD", decision: "watch", strategicFit: 3, eligibilityConfidence: 3, relationshipStrength: 1, effortLevel: 3, rationale: "" };
-
-function slugify(value: string) { return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
-function currency(value: number) { return value ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value) : "Not listed"; }
-function isoDate(value: string) { const date = new Date(value); return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10); }
-function fitScore(assessment: Assessment) { return Math.round(((assessment.strategicFit * 0.35 + assessment.eligibilityConfidence * 0.3 + assessment.relationshipStrength * 0.2 + (6 - assessment.effortLevel) * 0.15) / 5) * 100); }
-
-function DeadlineBadge({ dateString }: { dateString: string }) {
-  const deadline = new Date(`${dateString}T12:00:00`); const now = new Date(); now.setHours(0, 0, 0, 0);
-  const diffDays = Math.ceil((deadline.getTime() - now.getTime()) / 86400000);
-  const urgent = diffDays < 14;
-  const label = diffDays < 0 ? `Closed ${Math.abs(diffDays)}d ago` : diffDays === 0 ? "Due today" : `${diffDays}d remaining`;
-  return <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider ${urgent ? "border-red-400/30 bg-red-400/10 text-red-200" : "border-white/10 bg-white/5 text-white/55"}`}>{label}</span>;
-}
-
-function ScoreInput({ label, value, onChange, low, high }: { label: string; value: number; onChange: (value: number) => void; low: string; high: string }) {
-  return <label className="block rounded-xl border border-white/10 bg-black/20 p-3"><span className="flex justify-between text-xs text-white/65"><span>{label}</span><strong className="text-[var(--beam-gold)]">{value}/5</strong></span><input type="range" min="1" max="5" value={value} onChange={(event) => onChange(Number(event.target.value))} className="mt-3 w-full accent-[var(--beam-gold)]"/><span className="mt-1 flex justify-between text-[9px] uppercase tracking-wider text-white/25"><span>{low}</span><span>{high}</span></span></label>;
-}
+import { BEAMGrantsConsole } from "@/components/admin/grants/BEAMGrantsConsole";
+import { BEAMPursuitRoster } from "@/components/admin/grants/BEAMPursuitRoster";
+import { BEAMPursuitRoom } from "@/components/admin/grants/BEAMPursuitRoom";
+import { BEAMInstitutionalRolesSection } from "@/components/admin/grants/BEAMInstitutionalRolesSection";
+import {
+  fetchBeamOpportunities,
+  fetchBeamPursuits,
+  loopSomeoneInToPursuit,
+  REAL_PRODUCTION_SUBJECTS,
+  reaimPursuitToNewSubject,
+  seedOpportunityOnDiscovery,
+} from "@/lib/beamGrantsService";
+import type {
+  BeamOpportunity,
+  BeamPursuit,
+  BeamSubject,
+  ConsoleStateMode,
+  ContextSource,
+  FiveGateStageId,
+} from "@/types/grantConsole";
 
 export default function AdminGrantsPage() {
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [view, setView] = useState<WorkspaceView>("discovery");
-  const [keyword, setKeyword] = useState("");
-  const [category, setCategory] = useState("");
-  const [statuses, setStatuses] = useState("forecasted|posted");
-  const [results, setResults] = useState<GrantSearchResult[]>([]);
-  const [totalResults, setTotalResults] = useState(0);
-  const [searching, setSearching] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
-  const [selectedDetail, setSelectedDetail] = useState<GrantOpportunityDetail | null>(null);
-  const [assessment, setAssessment] = useState<Assessment>(DEFAULT_ASSESSMENT);
-  const [mapping, setMapping] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
-  const [editingProcessId, setEditingProcessId] = useState<string | null>(null);
 
-  useEffect(() => { try { return onAuthStateChanged(getFirebaseAuth(), (user) => setIsSignedIn(Boolean(user))); } catch { setIsSignedIn(false); return undefined; } }, []);
-  const { processes, loading, error } = useBeamProcesses(isSignedIn ? "grants" : undefined, isSignedIn);
-  const mappedSourceIds = useMemo(() => new Set(processes.map((process) => process.grantOpportunity?.sourceId).filter(Boolean)), [processes]);
-  const activeCount = processes.filter((process) => process.grantOpportunity?.decision === "pursue" || process.stages.some((stage) => stage.status === "active")).length;
-  const dueSoonCount = processes.filter((process) => { const deadline = process.funding?.deadlineDate; if (!deadline) return false; const days = (new Date(deadline).getTime() - Date.now()) / 86400000; return days >= 0 && days <= 30; }).length;
+  // Data Stores
+  const [opportunities, setOpportunities] = useState<BeamOpportunity[]>([]);
+  const [pursuits, setPursuits] = useState<BeamPursuit[]>([]);
+  const [subjects] = useState<BeamSubject[]>(REAL_PRODUCTION_SUBJECTS);
+
+  // State Machine Mode: "state_a_landing" (Default: Console full height alone)
+  const [stateMode, setStateMode] = useState<ConsoleStateMode>("state_a_landing");
+  const [activePursuitId, setActivePursuitId] = useState<string | null>(null);
+
+  const [consoleSources, setConsoleSources] = useState<ContextSource[]>([
+    {
+      id: "src-nofo-ahw-008",
+      type: "nofo",
+      name: "AHW_MCW_Pilot_RFP.pdf",
+      shortDescription: "Up to $50,000 · seed grant for pilot projects",
+      status: "ready",
+      pageCount: 18,
+      attachedAt: "2026-05-16T12:00:00Z",
+    },
+  ]);
+
+  const [message, setMessage] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      return onAuthStateChanged(getFirebaseAuth(), (user) => {
+        setIsSignedIn(Boolean(user));
+        setUserEmail(user?.email ?? null);
+      });
+    } catch {
+      setIsSignedIn(false);
+      return undefined;
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadData() {
+      const [oppsData, pursuitsData] = await Promise.all([
+        fetchBeamOpportunities(),
+        fetchBeamPursuits(),
+      ]);
+      if (!cancelled) {
+        setOpportunities(oppsData);
+        setPursuits(pursuitsData);
+      }
+    }
+    void loadData();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleGoogleSignIn() {
-    setAuthError(null); const provider = new GoogleAuthProvider();
-    try { try { await signInWithPopup(getFirebaseAuth(), provider); } catch (popupError) { const code = typeof popupError === "object" && popupError && "code" in popupError ? String((popupError as { code?: string }).code) : ""; if (code === "auth/popup-blocked" || code === "auth/cancelled-popup-request") await signInWithRedirect(getFirebaseAuth(), provider); else throw popupError; } }
-    catch (signInError) { setAuthError(signInError instanceof Error ? signInError.message : "Google sign-in failed."); }
+    setAuthError(null);
+    const provider = new GoogleAuthProvider();
+    try {
+      try {
+        await signInWithPopup(getFirebaseAuth(), provider);
+      } catch (popupError) {
+        const code =
+          typeof popupError === "object" && popupError && "code" in popupError
+            ? String((popupError as { code?: string }).code)
+            : "";
+        if (code === "auth/popup-blocked" || code === "auth/cancelled-popup-request") {
+          await signInWithRedirect(getFirebaseAuth(), provider);
+        } else {
+          throw popupError;
+        }
+      }
+    } catch (signInError) {
+      setAuthError(signInError instanceof Error ? signInError.message : "Google sign-in failed.");
+    }
   }
 
-  async function grantsApi(body: Record<string, unknown>) {
-    const token = await getFirebaseAuth().currentUser?.getIdToken(true); if (!token) throw new Error("Sign in again to search official sources.");
-    const response = await fetch("/api/admin/grants/opportunities", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    const payload = await response.json() as { error?: string; results?: GrantSearchResult[]; total?: number; detail?: GrantOpportunityDetail };
-    if (!response.ok) throw new Error(payload.error || "Official grant search failed."); return payload;
+  // Live Grants.gov / Console Query Execution
+  async function handleConsoleCommand(cmdInput: string) {
+    setSearchError(null);
+    setMessage(null);
+
+    const trimmed = cmdInput.trim();
+    let keyword = trimmed;
+
+    if (trimmed.startsWith("/")) {
+      const parts = trimmed.split(" ");
+      keyword = parts.slice(1).join(" ");
+    }
+
+    try {
+      const token = await getFirebaseAuth().currentUser?.getIdToken(true);
+      if (!token) throw new Error("Sign in to search official sources.");
+
+      const res = await fetch("/api/admin/grants/opportunities", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "search", keyword }),
+      });
+
+      const payload = (await res.json()) as { error?: string; results?: BeamOpportunity[] };
+      if (!res.ok) throw new Error(payload.error || "Official query failed.");
+
+      const newOpps = payload.results ?? [];
+      if (newOpps.length > 0) {
+        await Promise.all(newOpps.map((opp) => seedOpportunityOnDiscovery(opp)));
+        setOpportunities((prev) => {
+          const ids = new Set(prev.map((o) => o.id));
+          return [...prev, ...newOpps.filter((o) => !ids.has(o.id))];
+        });
+        setMessage(`Live Grants.gov search returned ${newOpps.length} opportunities seeded into Firestore.`);
+      } else {
+        setMessage(`Query completed. No new federal opportunities matched "${keyword}".`);
+      }
+      setStateMode("state_b_roster");
+    } catch (err) {
+      setSearchError(err instanceof Error ? err.message : "Query execution failed.");
+    }
   }
 
-  async function searchOfficial(event?: FormEvent) {
-    event?.preventDefault(); setSearching(true); setSearchError(null); setSelectedDetail(null); setMessage(null);
-    try { const payload = await grantsApi({ action: "search", keyword, category, statuses }); setResults(payload.results ?? []); setTotalResults(payload.total ?? 0); }
-    catch (nextError) { setSearchError(nextError instanceof Error ? nextError.message : "Search failed."); }
-    finally { setSearching(false); }
-  }
-
-  async function reviewOpportunity(result: GrantSearchResult) {
-    setSearching(true); setSearchError(null); setMessage(null);
-    try { const payload = await grantsApi({ action: "detail", id: result.id }); if (payload.detail) { setSelectedDetail(payload.detail); setAssessment(DEFAULT_ASSESSMENT); } }
-    catch (nextError) { setSearchError(nextError instanceof Error ? nextError.message : "Opportunity details could not be loaded."); }
-    finally { setSearching(false); }
-  }
-
-  async function mapToBeam() {
-    if (!selectedDetail) return; setMapping(true); setSearchError(null);
-    const now = new Date().toISOString(); const score = fitScore(assessment); const deadline = isoDate(selectedDetail.closeDate);
-    const process: BeamProcess = {
-      id: `grant-${slugify(selectedDetail.number || selectedDetail.id)}`, title: selectedDetail.title, domain: "grants", linkedEntityId: selectedDetail.id, linkedEntityType: "grant-opportunity",
-      stages: PIPELINE_STAGES.map(([id, label], index) => ({ id, label, status: index === 0 ? "active" : "idle", owner: assessment.owner.trim() || "TBD", note: index === 0 ? `Fit ${score}/100 · ${assessment.decision.toUpperCase()} · Confirm legal eligibility against the full NOFO.` : "", updatedAt: now })),
-      funding: { targetUsd: selectedDetail.awardCeiling || selectedDetail.estimatedFunding, raisedUsd: 0, label: "Potential award", ...(deadline ? { deadlineDate: deadline } : {}) }, createdAt: now, updatedAt: now,
-      grantOpportunity: { source: "grants.gov", sourceId: selectedDetail.id, sourceNumber: selectedDetail.number, sourceUrl: selectedDetail.sourceUrl, agencyCode: selectedDetail.agencyCode, agencyName: selectedDetail.agencyName, description: selectedDetail.description, applicantTypes: selectedDetail.applicantTypes, fundingCategories: selectedDetail.fundingCategories, awardFloor: selectedDetail.awardFloor, awardCeiling: selectedDetail.awardCeiling, estimatedFunding: selectedDetail.estimatedFunding, costSharing: selectedDetail.costSharing, postedDate: selectedDetail.openDate, closeDate: selectedDetail.closeDate, decision: assessment.decision, owner: assessment.owner.trim() || "TBD", strategicFit: assessment.strategicFit, eligibilityConfidence: assessment.eligibilityConfidence, relationshipStrength: assessment.relationshipStrength, effortLevel: assessment.effortLevel, fitScore: score, rationale: assessment.rationale.trim(), mappedAt: now, lastSyncedAt: now },
+  const handleAttachClick = () => {
+    const dummyNewSource: ContextSource = {
+      id: `src-attached-${Date.now()}`,
+      type: "file",
+      name: "water-sensor-grant-brief.pdf",
+      shortDescription: "24 pp · attached via console",
+      status: "ready",
+      attachedAt: new Date().toISOString(),
     };
-    try { await upsertBeamProcess(process); setMessage(`${selectedDetail.title} is now mapped into the BEAM grant pipeline.`); setSelectedDetail(null); setView("pipeline"); }
-    catch (nextError) { setSearchError(nextError instanceof Error ? nextError.message : "Grant could not be mapped."); }
-    finally { setMapping(false); }
+    setConsoleSources((prev) => [...prev, dummyNewSource]);
+    setMessage("Attached new context source to console session.");
+  };
+
+  const handleOpenRoom = (pursuitId: string) => {
+    setActivePursuitId(pursuitId);
+    setStateMode("state_c_room");
+  };
+
+  const handleStartPursuitFromOpp = (oppId: string) => {
+    const opp = opportunities.find((o) => o.id === oppId);
+    if (!opp) return;
+
+    const defaultSubject = subjects[0]!;
+    const now = new Date().toISOString();
+    const newPursuitId = `pursuit-${opp.sourceId}-${defaultSubject.id.replace(/^subject-/, "")}`;
+
+    const newPursuit: BeamPursuit = {
+      id: newPursuitId,
+      opportunityId: opp.id,
+      opportunityNumber: opp.opportunityNumber,
+      opportunityTitle: opp.title,
+      agencyName: opp.agencyName,
+      sourceUrl: opp.sourceUrl,
+
+      subjectId: defaultSubject.id,
+      subjectName: defaultSubject.name,
+      subjectType: defaultSubject.type,
+
+      currentGate: "open",
+      gateProgress: {
+        open: { status: "active", updatedAt: now },
+        research_qualify: { status: "idle" },
+        drafting: { status: "idle" },
+        submitted: { status: "idle" },
+        decision: { status: "idle" },
+      },
+
+      decision: "watch",
+      fitScore: 75,
+      strategicFit: 4,
+      eligibilityConfidence: 4,
+      relationshipStrength: 2,
+      effortLevel: 3,
+      rationale: `Pursuit initialized from console search for ${defaultSubject.name}.`,
+
+      targetUsd: opp.awardCeiling || 50000,
+      raisedUsd: 0,
+      deadlineDate: opp.closeDate || "2026-11-02",
+      isFederal: opp.externalSource === "grants.gov",
+
+      participants: [
+        {
+          userId: "user-detania",
+          name: "DeTania",
+          email: userEmail || "detania@beamcenter.org",
+          roleId: "grants_lead_manager",
+          roleLabel: "Grants Lead",
+          assignedAt: now,
+        },
+      ],
+      pursuitContextSources: [...opp.opportunityContextSources],
+      latestActivityPull: `Initialized pursuit bound to ${defaultSubject.name} (DeTania)`,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    setPursuits((prev) => [newPursuit, ...prev]);
+    setActivePursuitId(newPursuit.id);
+    setStateMode("state_c_room");
+    setMessage(`Started active pursuit for ${opp.opportunityNumber} bound to ${defaultSubject.name}.`);
+  };
+
+  const handleLoopSomeoneIn = async (participant: { name: string; email: string; roleLabel: string; roleId?: string }) => {
+    const currentPursuit = pursuits.find((p) => p.id === activePursuitId);
+    if (!currentPursuit) return;
+
+    const actorName = userEmail?.split("@")[0] || "DeTania";
+    const fullPart = {
+      userId: `user-${participant.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      name: participant.name,
+      email: participant.email,
+      roleId: participant.roleId,
+      roleLabel: participant.roleLabel,
+    };
+
+    const updated = await loopSomeoneInToPursuit({
+      pursuit: currentPursuit,
+      participant: fullPart,
+      actorName,
+    });
+
+    setPursuits((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    setMessage(`Looped in ${participant.name} as ${participant.roleLabel}.`);
+  };
+
+  const handleReaimPursuit = async (newSubject: BeamSubject) => {
+    const currentPursuit = pursuits.find((p) => p.id === activePursuitId);
+    if (!currentPursuit) return;
+
+    const actorName = userEmail?.split("@")[0] || "DeTania";
+    const { oldPursuit, newPursuit } = await reaimPursuitToNewSubject({
+      pursuit: currentPursuit,
+      newSubject,
+      actorName,
+    });
+
+    setPursuits((prev) => [newPursuit, ...prev.map((p) => (p.id === oldPursuit.id ? oldPursuit : p))]);
+    setActivePursuitId(newPursuit.id);
+    setMessage(`Re-aimed pursuit to ${newSubject.name}. Forked new pursuit inheriting NOFO research.`);
+  };
+
+  const handleAdvanceGate = (gate: FiveGateStageId) => {
+    const currentPursuit = pursuits.find((p) => p.id === activePursuitId);
+    if (!currentPursuit) return;
+
+    const now = new Date().toISOString();
+    const actorName = userEmail?.split("@")[0] || "DeTania";
+    const updated: BeamPursuit = {
+      ...currentPursuit,
+      currentGate: gate,
+      gateProgress: {
+        ...currentPursuit.gateProgress,
+        [gate]: { status: "active", updatedAt: now },
+      },
+      latestActivityPull: `Advanced gate to ${gate.toUpperCase()} (${actorName})`,
+      updatedAt: now,
+    };
+
+    setPursuits((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    setMessage(`Advanced gate to ${gate.toUpperCase()}.`);
+  };
+
+  if (!isSignedIn) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#050505] px-6 text-white font-mono">
+        <section className="max-w-xl rounded-3xl border border-[#23221a] bg-[#0c0c08] p-10 text-center shadow-2xl space-y-5">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--beam-gold)] font-bold">
+            BEAM Internal / Grants Console
+          </p>
+          <h1 className="font-serif font-normal text-4xl text-[#f0ead6]">
+            Give it the source.<br />
+            <span className="text-[#c8b97a]">Get back a plan.</span>
+          </h1>
+          <p className="text-xs leading-relaxed text-[#6f685a] font-sans">
+            Sign in with an active BEAM admin account to search live sources, qualify opportunities, and run the pursuit roster.
+          </p>
+          <button
+            type="button"
+            onClick={() => void handleGoogleSignIn()}
+            className="rounded-full bg-[var(--beam-gold)] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-black hover:bg-[var(--beam-gold-bright)] transition cursor-pointer"
+          >
+            Continue with Google Admin
+          </button>
+          {authError && <p className="text-xs text-red-400 mt-2">{authError}</p>}
+        </section>
+      </main>
+    );
   }
 
-  if (!isSignedIn) return <main className="grid min-h-screen place-items-center bg-[#0e0e0e] px-6 text-white"><section className="beam-card max-w-xl rounded-[2rem] p-10 text-center"><p className="beam-eyebrow">BEAM Funding Intelligence</p><h1 className="beam-display mt-4 text-5xl">Find the right capital.</h1><p className="mt-5 text-sm leading-7 text-white/55">Search official opportunities, qualify the fit, and move only the strongest prospects into BEAM.</p><button onClick={() => void handleGoogleSignIn()} className="mt-7 rounded-full bg-[var(--beam-gold)] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-black">Continue with Google</button>{authError ? <p className="mt-4 text-sm text-red-300">{authError}</p> : null}</section></main>;
+  const activePursuitsCount = pursuits.filter((p) => p.status === "active").length;
+  const activePursuit = pursuits.find((p) => p.id === activePursuitId);
+  const presencePullText = pursuits[0]?.latestActivityPull || "DeTania opened AHW 20m ago";
 
-  return <main className="min-h-screen bg-[#0e0e0e] text-white"><div className="mx-auto max-w-7xl px-5 py-9 sm:px-8">
-    <header className="border-b border-white/10 pb-7"><div className="flex flex-wrap items-start justify-between gap-5"><div><p className="beam-eyebrow">BEAM Internal / Capital Development</p><h1 className="beam-display mt-3 text-4xl sm:text-6xl">Funding Intelligence</h1><p className="mt-4 max-w-3xl text-sm leading-7 text-white/55">Discover from authoritative sources, qualify before committing, and move opportunities through a disciplined capture-to-stewardship pipeline.</p></div><div className="flex gap-2"><Link href="/admin" className="rounded-full border border-white/15 px-4 py-2 text-xs text-white/65">Admin portal</Link><button onClick={() => void signOut(getFirebaseAuth())} className="rounded-full border border-white/15 px-4 py-2 text-xs text-white/65">Sign out</button></div></div>
-      <div className="mt-7 grid gap-3 sm:grid-cols-3"><div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4"><p className="text-[10px] uppercase tracking-wider text-white/35">Mapped opportunities</p><p className="beam-display mt-2 text-3xl">{processes.length}</p></div><div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4"><p className="text-[10px] uppercase tracking-wider text-white/35">Active pursuits</p><p className="beam-display mt-2 text-3xl">{activeCount}</p></div><div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4"><p className="text-[10px] uppercase tracking-wider text-white/35">Due within 30 days</p><p className="beam-display mt-2 text-3xl">{dueSoonCount}</p></div></div>
-      <nav className="mt-7 flex flex-wrap gap-2">{([['discovery','01 / Discover & qualify'],['pipeline','02 / BEAM pipeline'],['method','03 / Operating method']] as const).map(([id,label]) => <button key={id} onClick={() => setView(id)} className={`rounded-full px-4 py-2 text-xs uppercase tracking-wider ${view === id ? "bg-[var(--beam-gold)] text-black" : "border border-white/10 text-white/55"}`}>{label}</button>)}</nav>
-    </header>
+  return (
+    <main className="min-h-screen bg-[#080808] text-white font-mono">
+      {/* Persistent Group 3 Console at Top */}
+      <BEAMGrantsConsole
+        signedInUser={{ name: userEmail?.split("@")[0] || "DeTania", title: "Research Co-Lead" }}
+        contextSources={consoleSources}
+        activePursuitsCount={activePursuitsCount}
+        peopleWorkingCount={2}
+        presencePullText={presencePullText}
+        onCommandSubmit={(cmd) => void handleConsoleCommand(cmd)}
+        onAttachClick={handleAttachClick}
+        isCollapsed={stateMode !== "state_a_landing"}
+        onSummonRoster={() => setStateMode("state_b_roster")}
+        onReturnToLanding={() => setStateMode("state_a_landing")}
+      />
 
-    {error ? <p className="mt-5 rounded-xl bg-red-400/10 p-3 text-sm text-red-200">{error.message}</p> : null}{searchError ? <p className="mt-5 rounded-xl bg-red-400/10 p-3 text-sm text-red-200">{searchError}</p> : null}{message ? <p className="mt-5 rounded-xl bg-emerald-400/10 p-3 text-sm text-emerald-200">{message}</p> : null}
+      {/* STATE A: Console Landing Only */}
+      {stateMode === "state_a_landing" && (
+        <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8 text-center text-[10px] text-[#3a3428] uppercase tracking-widest">
+          {message && <p className="text-emerald-400 font-mono mb-2">{message}</p>}
+        </div>
+      )}
 
-    {view === "discovery" ? <section className="py-8"><div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_22rem]"><div>
-      <form onSubmit={searchOfficial} className="beam-card rounded-[1.75rem] p-5 sm:p-7"><div className="flex items-center justify-between gap-4"><div><p className="beam-eyebrow">Live source / Grants.gov</p><h2 className="beam-display mt-2 text-3xl">Search federal opportunities</h2></div><span className="rounded-full border border-emerald-300/20 bg-emerald-300/5 px-3 py-1 text-[10px] uppercase tracking-wider text-emerald-200">Official API</span></div><div className="mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem_10rem]"><input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Housing, workforce, civic technology..." className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none focus:border-[var(--beam-gold)]"/><select value={category} onChange={(event) => setCategory(event.target.value)} className="rounded-xl border border-white/10 bg-[#151515] px-3 py-3 text-sm text-white">{FUNDING_CATEGORIES.map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select><select value={statuses} onChange={(event) => setStatuses(event.target.value)} className="rounded-xl border border-white/10 bg-[#151515] px-3 py-3 text-sm text-white"><option value="forecasted|posted">Open + forecast</option><option value="posted">Open only</option><option value="forecasted">Forecast only</option></select></div><button disabled={searching} className="mt-4 rounded-full bg-[var(--beam-gold)] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-black disabled:opacity-50">{searching ? "Searching..." : "Search official source"}</button></form>
-      <div className="mt-6"><div className="flex justify-between"><p className="beam-eyebrow">Opportunity desk</p>{totalResults ? <p className="text-xs text-white/35">Showing {results.length} of {totalResults.toLocaleString()}</p> : null}</div><div className="mt-3 space-y-3">{results.length ? results.map((result) => <article key={result.id} className="rounded-2xl border border-white/10 bg-white/[0.025] p-5"><div className="flex flex-wrap items-start justify-between gap-4"><div className="min-w-0 flex-1"><div className="flex flex-wrap gap-2 text-[10px] uppercase tracking-wider text-[var(--beam-gold)]"><span>{result.status}</span><span>·</span><span>{result.agencyName || result.agencyCode}</span></div><h3 className="mt-2 text-lg font-medium leading-7">{result.title}</h3><p className="mt-2 font-mono text-[10px] text-white/35">{result.number}{result.assistanceListings.length ? ` · ALN ${result.assistanceListings.join(", ")}` : ""}</p><p className="mt-3 text-xs text-white/45">Posted {result.openDate || "TBD"} · Closes {result.closeDate || "TBD"}</p></div><button disabled={searching || mappedSourceIds.has(result.id)} onClick={() => void reviewOpportunity(result)} className="rounded-full border border-white/15 px-4 py-2 text-xs text-white/70 disabled:opacity-40">{mappedSourceIds.has(result.id) ? "Already mapped" : "Review & map"}</button></div></article>) : <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-white/35">Search by mission area, program, population, or agency. Results remain outside BEAM until you qualify and map them.</div>}</div></div>
-    </div><aside className="space-y-4"><div className="rounded-2xl border border-white/10 bg-[#12130f] p-5"><p className="beam-eyebrow">Source desk</p><h3 className="beam-display mt-2 text-2xl">Authoritative channels</h3><div className="mt-5 space-y-2 text-sm"><a href="https://www.grants.gov/search-grants" target="_blank" rel="noreferrer" className="block rounded-xl border border-white/10 p-3 text-white/65 hover:border-white/25">Grants.gov <span className="float-right">↗</span><small className="mt-1 block text-white/30">All federal NOFOs</small></a><a href="https://grants.nih.gov/funding" target="_blank" rel="noreferrer" className="block rounded-xl border border-white/10 p-3 text-white/65 hover:border-white/25">NIH Funding <span className="float-right">↗</span><small className="mt-1 block text-white/30">Biomedical and research notices</small></a><a href="https://www.nsf.gov/funding/opportunities" target="_blank" rel="noreferrer" className="block rounded-xl border border-white/10 p-3 text-white/65 hover:border-white/25">NSF Opportunities <span className="float-right">↗</span><small className="mt-1 block text-white/30">Science and infrastructure</small></a><a href="https://sam.gov/content/assistance-listings" target="_blank" rel="noreferrer" className="block rounded-xl border border-white/10 p-3 text-white/65 hover:border-white/25">SAM.gov Listings <span className="float-right">↗</span><small className="mt-1 block text-white/30">Program and assistance intelligence</small></a></div></div><div className="rounded-2xl border border-amber-300/15 bg-amber-300/5 p-5 text-xs leading-6 text-amber-100/60"><strong className="block text-amber-100">Qualification rule</strong>Never treat a search result as proof of eligibility. Confirm the complete NOFO, registrations, applicant type, geography, match requirement, and authorized submitter before “Pursue.”</div></aside></div>
-      {selectedDetail ? <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 p-4 backdrop-blur-sm"><div className="mx-auto my-5 max-w-5xl rounded-[2rem] border border-white/15 bg-[#11120f] p-6 shadow-2xl sm:p-8"><div className="flex items-start justify-between gap-4"><div><p className="beam-eyebrow">Qualification desk / {selectedDetail.agencyCode}</p><h2 className="beam-display mt-2 max-w-3xl text-4xl">{selectedDetail.title}</h2><p className="mt-2 font-mono text-xs text-white/35">{selectedDetail.number}</p></div><button onClick={() => setSelectedDetail(null)} className="rounded-full border border-white/15 px-3 py-2 text-xs">Close</button></div><div className="mt-7 grid gap-7 lg:grid-cols-[1fr_22rem]"><div><div className="grid gap-3 sm:grid-cols-3"><div className="rounded-xl bg-black/25 p-4"><p className="text-[9px] uppercase tracking-wider text-white/30">Award range</p><p className="mt-2 text-sm">{currency(selectedDetail.awardFloor)} — {currency(selectedDetail.awardCeiling)}</p></div><div className="rounded-xl bg-black/25 p-4"><p className="text-[9px] uppercase tracking-wider text-white/30">Close date</p><p className="mt-2 text-sm">{selectedDetail.closeDate || "Not listed"}</p></div><div className="rounded-xl bg-black/25 p-4"><p className="text-[9px] uppercase tracking-wider text-white/30">Cost share</p><p className="mt-2 text-sm">{selectedDetail.costSharing ? "Required / indicated" : "Not indicated"}</p></div></div><h3 className="mt-6 text-sm font-medium">Official synopsis</h3><p className="mt-3 max-h-72 overflow-y-auto whitespace-pre-wrap pr-3 text-sm leading-7 text-white/50">{selectedDetail.description || "No synopsis supplied."}</p><h3 className="mt-6 text-sm font-medium">Applicant types</h3><div className="mt-3 flex flex-wrap gap-2">{selectedDetail.applicantTypes.map((item) => <span key={item} className="rounded-full border border-white/10 px-3 py-1 text-[10px] text-white/50">{item}</span>)}</div><a href={selectedDetail.sourceUrl} target="_blank" rel="noreferrer" className="mt-6 inline-flex text-xs text-[var(--beam-gold)]">Read the complete NOFO on Grants.gov ↗</a></div><div><div className="rounded-2xl border border-[var(--beam-gold)]/20 bg-[var(--beam-gold)]/5 p-5"><div className="flex justify-between"><div><p className="beam-eyebrow">BEAM fit score</p><p className="beam-display mt-2 text-5xl">{fitScore(assessment)}</p></div><select value={assessment.decision} onChange={(event) => setAssessment({...assessment, decision:event.target.value as GrantDecision})} className="h-fit rounded-xl border border-white/10 bg-[#151515] p-2 text-xs"><option value="watch">Watch</option><option value="pursue">Pursue</option><option value="decline">Decline</option></select></div><label className="mt-5 block text-xs text-white/50">Opportunity owner<input value={assessment.owner} onChange={(event) => setAssessment({...assessment,owner:event.target.value})} className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 p-3 text-white"/></label><div className="mt-4 space-y-2"><ScoreInput label="Strategic alignment" value={assessment.strategicFit} onChange={(value)=>setAssessment({...assessment,strategicFit:value})} low="weak" high="core"/><ScoreInput label="Eligibility confidence" value={assessment.eligibilityConfidence} onChange={(value)=>setAssessment({...assessment,eligibilityConfidence:value})} low="unknown" high="verified"/><ScoreInput label="Sponsor relationship" value={assessment.relationshipStrength} onChange={(value)=>setAssessment({...assessment,relationshipStrength:value})} low="cold" high="active"/><ScoreInput label="Effort required" value={assessment.effortLevel} onChange={(value)=>setAssessment({...assessment,effortLevel:value})} low="light" high="heavy"/></div><label className="mt-4 block text-xs text-white/50">Decision rationale<textarea rows={4} value={assessment.rationale} onChange={(event)=>setAssessment({...assessment,rationale:event.target.value})} placeholder="Why this opportunity belongs in BEAM—or what must be proven first." className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 p-3 text-white"/></label><button disabled={mapping} onClick={() => void mapToBeam()} className="mt-5 w-full rounded-full bg-[var(--beam-gold)] py-3 text-xs font-semibold uppercase tracking-wider text-black disabled:opacity-50">{mapping ? "Mapping..." : "Map into BEAM"}</button></div></div></div></div></div> : null}
-    </section> : null}
+      {/* STATE B or STATE C: Roster / Room / Institutional Roles */}
+      {stateMode !== "state_a_landing" && (
+        <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 space-y-6">
+          {/* Status Messages */}
+          {searchError && (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-200">
+              {searchError}
+            </div>
+          )}
+          {message && (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-200">
+              {message}
+            </div>
+          )}
 
-    {view === "pipeline" ? <section className="py-8"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="beam-eyebrow">Portfolio / owned work</p><h2 className="beam-display mt-2 text-4xl">BEAM grant pipeline</h2><p className="mt-3 text-sm text-white/45">Only qualified opportunities belong here. Every pursuit has an owner, decision, deadline, and next gate.</p></div>{!isCreating ? <button onClick={() => setIsCreating(true)} className="rounded-full bg-[var(--beam-gold)] px-5 py-3 text-xs font-semibold uppercase tracking-wider text-black">Add manual opportunity</button> : null}</div><div className="mt-7 space-y-6">{isCreating ? <BeamProcessEditor domain="grants" onSave={async (data) => { await upsertBeamProcess(data); setIsCreating(false); }} onCancel={() => setIsCreating(false)}/> : null}{loading ? <p className="text-sm text-white/45">Loading pipeline...</p> : processes.length ? processes.map((process) => <div key={process.id} className="relative">{editingProcessId === process.id ? <BeamProcessEditor initialProcess={process} domain="grants" onSave={async (updated)=>{await upsertBeamProcess(updated);setEditingProcessId(null);}} onCancel={()=>setEditingProcessId(null)} onDelete={async(id)=>{await deleteBeamProcess(id);setEditingProcessId(null);}}/> : <><div className="absolute right-4 top-4 z-10 flex items-center gap-2">{process.grantOpportunity ? <span className="rounded-full border border-[var(--beam-gold)]/25 bg-black/70 px-3 py-1 text-[10px] uppercase tracking-wider text-[var(--beam-gold)]">Fit {process.grantOpportunity.fitScore} · {process.grantOpportunity.decision}</span> : null}{process.funding?.deadlineDate ? <DeadlineBadge dateString={process.funding.deadlineDate}/> : null}<button onClick={()=>setEditingProcessId(process.id)} className="rounded-full border border-white/20 bg-black/70 px-3 py-1 text-[10px] uppercase tracking-wider text-white/70">Edit</button></div><BeamProcessLadder process={process}/>{process.grantOpportunity ? <div className="-mt-3 flex flex-wrap gap-4 rounded-b-2xl border border-t-0 border-white/10 bg-black/20 px-5 py-4 text-[10px] text-white/40"><span>{process.grantOpportunity.agencyName}</span><span>{process.grantOpportunity.sourceNumber}</span><span>Owner: {process.grantOpportunity.owner}</span><a href={process.grantOpportunity.sourceUrl} target="_blank" rel="noreferrer" className="text-[var(--beam-gold)]">Official source ↗</a></div> : null}</>}</div>) : !isCreating ? <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-white/35">No mapped opportunities yet. Start in Discover & qualify.</div> : null}</div></section> : null}
+          {/* Navigation Bar */}
+          <div className="flex items-center justify-between border-b border-[#1c1c14] pb-4">
+            <div className="flex items-center space-x-3 text-xs">
+              <button
+                type="button"
+                onClick={() => setStateMode("state_b_roster")}
+                className={`px-4 py-2 rounded-full uppercase tracking-wider transition ${
+                  stateMode === "state_b_roster"
+                    ? "bg-[var(--beam-gold)] text-black font-bold"
+                    : "border border-white/10 text-white/60 hover:text-white"
+                }`}
+              >
+                👥 Pursuit Roster ({activePursuitsCount})
+              </button>
+              {activePursuit && (
+                <button
+                  type="button"
+                  onClick={() => setStateMode("state_c_room")}
+                  className={`px-4 py-2 rounded-full uppercase tracking-wider transition ${
+                    stateMode === "state_c_room"
+                      ? "bg-[var(--beam-gold)] text-black font-bold"
+                      : "border border-white/10 text-white/60 hover:text-white"
+                  }`}
+                >
+                  🚪 Pursuit Room ({activePursuit.opportunityNumber})
+                </button>
+              )}
+            </div>
 
-    {view === "method" ? <section className="py-8"><div className="grid gap-7 lg:grid-cols-[0.8fr_1.2fr]"><div><p className="beam-eyebrow">The operating model</p><h2 className="beam-display mt-3 text-5xl leading-tight">Search broadly. Pursue narrowly.</h2><p className="mt-5 text-sm leading-7 text-white/50">High-performing grant organizations protect writing capacity with a real qualification gate. BEAM’s system treats funding as a portfolio discipline: authoritative discovery, legal eligibility, strategic fit, an explicit go/no-go decision, assigned ownership, early submission, and post-award stewardship.</p><div className="mt-6 rounded-2xl border border-amber-300/15 bg-amber-300/5 p-5 text-sm leading-7 text-amber-100/60"><strong className="text-amber-100">Recommended governance:</strong> no application enters development without a named program lead, grant lead, budget owner, authorized submitter, and confirmed internal deadline.</div></div><div className="space-y-3">{PIPELINE_STAGES.map(([id,label],index)=><article key={id} className="grid grid-cols-[3rem_1fr] gap-4 rounded-2xl border border-white/10 bg-white/[0.025] p-5"><span className="font-mono text-xs text-[var(--beam-gold)]">0{index+1}</span><div><h3 className="font-medium">{label}</h3><p className="mt-2 text-xs leading-6 text-white/45">{["Confirm mission alignment, legal eligibility, geography, award economics, deadline feasibility, and restrictions.","Make a documented pursue/watch/decline decision; name the accountable owner and authorized submitter.","Build sponsor intelligence, partner commitments, win themes, evidence, and a compliance calendar.","Develop narrative, work plan, outcomes, evaluation, budget, attachments, and internal reviews in parallel.","Freeze early, route for authorization, submit before the deadline, and resolve portal validations.","Track review, answer clarifications, negotiate terms, and capture the official award decision.","Manage reporting, compliance, outcomes, relationships, renewals, and reusable institutional knowledge."][index]}</p></div></article>)}</div></div></section> : null}
-  </div></main>;
+            <div className="flex items-center space-x-2 text-xs text-[#5a5448]">
+              <button
+                type="button"
+                onClick={() => setStateMode("state_a_landing")}
+                className="hover:text-white transition cursor-pointer"
+              >
+                Console Landing (Esc) ↑
+              </button>
+              <span>·</span>
+              <Link href="/admin" className="hover:text-white transition">
+                Admin Portal
+              </Link>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => void signOut(getFirebaseAuth())}
+                className="hover:text-red-400 transition cursor-pointer"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+
+          {/* Roster View + Institutional Roles Section */}
+          {stateMode === "state_b_roster" && (
+            <div className="space-y-8">
+              <BEAMPursuitRoster
+                pursuits={pursuits}
+                mappedOpportunities={opportunities}
+                onOpenRoom={handleOpenRoom}
+                onStartPursuit={handleStartPursuitFromOpp}
+              />
+              <BEAMInstitutionalRolesSection />
+            </div>
+          )}
+
+          {/* Room View */}
+          {stateMode === "state_c_room" && activePursuit && (
+            <BEAMPursuitRoom
+              pursuit={activePursuit}
+              subjects={subjects}
+              onBackToRoster={() => setStateMode("state_b_roster")}
+              onLoopIn={(p) => void handleLoopSomeoneIn(p)}
+              onReaim={(newSub) => void handleReaimPursuit(newSub)}
+              onAdvanceGate={(gate) => handleAdvanceGate(gate)}
+            />
+          )}
+        </div>
+      )}
+    </main>
+  );
 }
