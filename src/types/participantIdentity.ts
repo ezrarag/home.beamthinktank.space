@@ -164,6 +164,32 @@ export interface ParticipantIdentitySeedData {
   cohorts: CohortSeedInput[];
 }
 
+export type BusinessFunction =
+  | "marketing"
+  | "business_development"
+  | "grant_writing"
+  | "accounting"
+  | "legal"
+  | "project_management"
+  | "community_organizing"
+  | "fundraising"
+  | "research";
+
+export interface ProfessionalProfile {
+  id: string;                    // same value as participantUid
+  participantUid: string;        // FK to the canonical ParticipantProfile
+  businessFunctions: BusinessFunction[];  // one person can hold more than one
+  bio: string;
+  rateType?: "hourly" | "project" | "volunteer";
+  rate?: number;
+  portfolioLinks: string[];
+  matchedDomains: string[];      // e.g. ["orchestra", "grounds", "forge"]
+  matchedProjectIds: string[];   // ids into beamProcesses or domain-native projects
+  availability?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ParticipantIdentitySummary {
   organizations: Organization[];
   cohorts: Cohort[];
@@ -171,5 +197,7 @@ export interface ParticipantIdentitySummary {
     participantProfiles: number;
     organizationMemberships: number;
     cohortMemberships: number;
+    professionalProfiles?: number;
   };
 }
+

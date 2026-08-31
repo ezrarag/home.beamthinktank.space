@@ -107,6 +107,15 @@ service cloud.firestore {
       allow read, create, update, delete: if isAdmin();
     }
 
+    match /professionalProfiles/{profileId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.auth.uid == profileId
+        && request.auth.uid == request.resource.data.participantUid;
+      allow update, delete: if isSignedIn()
+        && (request.auth.uid == resource.data.participantUid || isAdmin());
+    }
+
     match /organizationMemberships/{docId} {
       allow read, create, update, delete: if isAdmin();
     }

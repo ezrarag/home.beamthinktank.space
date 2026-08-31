@@ -334,6 +334,13 @@ export default function AdminPortalPage() {
             cta="Open Participant Identity"
           />
           <PortalCard
+            eyebrow="Participant Model"
+            title="The Neighbor Layer"
+            description="Punch list for cross-site presence, one shared profile, and community-project readiness."
+            href="/admin/neighbor-layer"
+            cta="Open Neighbor Layer"
+          />
+          <PortalCard
             eyebrow="Research + Production"
             title="Use-Case Gallery"
             description="Research + production use cases · public at /use-cases"

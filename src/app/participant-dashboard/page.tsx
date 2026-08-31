@@ -16,6 +16,7 @@ import {
   type ParticipantDashboardPreferences,
   type ParticipantOnboardingProfile,
 } from "@/lib/participantDashboard";
+import { ProfessionalProfileSection } from "@/components/dashboard/ProfessionalProfileSection";
 import { useAuthStore } from "@/store/authStore";
 
 interface WorkContextResolutionState {
@@ -572,6 +573,8 @@ export default function ParticipantDashboard() {
                 </div>
               </div>
             </section>
+
+            <ProfessionalProfileSection uid={user.uid} />
 
             <section className="rounded-3xl border border-white/10 bg-[#1D2127] p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
