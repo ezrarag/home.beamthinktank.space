@@ -306,6 +306,13 @@ export default function AdminPortalPage() {
 
         <section className="mt-8 grid gap-4 sm:grid-cols-2">
           <PortalCard
+            eyebrow="Organization"
+            title="Structure"
+            description="What BEAM is, what the letters mean, where every division sits, and which structural questions are still open."
+            href="/admin/structure"
+            cta="Open Structure"
+          />
+          <PortalCard
             eyebrow="BEAM Game Engine"
             title="Action Logger"
             description="Mobile-first form for logging actions that auto-generate summaries, role needs, and tasks."
