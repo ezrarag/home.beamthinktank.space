@@ -307,6 +307,13 @@ export default function AdminPortalPage() {
         <section className="mt-8 grid gap-4 sm:grid-cols-2">
           <PortalCard
             eyebrow="Organization"
+            title="Credit Union"
+            description="How the BEAM credit union charters through NCUA, what BEAM owes as sponsor, and the primary sources to read."
+            href="/admin/credit-union"
+            cta="Open Credit Union"
+          />
+          <PortalCard
+            eyebrow="Organization"
             title="Structure"
             description="What BEAM is, what the letters mean, where every division sits, and which structural questions are still open."
             href="/admin/structure"
