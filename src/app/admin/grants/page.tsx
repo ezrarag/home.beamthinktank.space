@@ -11,8 +11,8 @@ import { BEAMInstitutionalRolesSection } from "@/components/admin/grants/BEAMIns
 import {
   fetchBeamOpportunities,
   fetchBeamPursuits,
+  fetchBeamSubjects,
   loopSomeoneInToPursuit,
-  REAL_PRODUCTION_SUBJECTS,
   reaimPursuitToNewSubject,
   seedOpportunityOnDiscovery,
 } from "@/lib/beamGrantsService";
@@ -33,7 +33,7 @@ export default function AdminGrantsPage() {
   // Data Stores
   const [opportunities, setOpportunities] = useState<BeamOpportunity[]>([]);
   const [pursuits, setPursuits] = useState<BeamPursuit[]>([]);
-  const [subjects] = useState<BeamSubject[]>(REAL_PRODUCTION_SUBJECTS);
+  const [subjects, setSubjects] = useState<BeamSubject[]>([]);
 
   // State Machine Mode: "state_a_landing" (Default: Console full height alone)
   const [stateMode, setStateMode] = useState<ConsoleStateMode>("state_a_landing");
@@ -69,13 +69,15 @@ export default function AdminGrantsPage() {
   useEffect(() => {
     let cancelled = false;
     async function loadData() {
-      const [oppsData, pursuitsData] = await Promise.all([
+      const [oppsData, pursuitsData, subjectsData] = await Promise.all([
         fetchBeamOpportunities(),
         fetchBeamPursuits(),
+        fetchBeamSubjects(),
       ]);
       if (!cancelled) {
         setOpportunities(oppsData);
         setPursuits(pursuitsData);
+        setSubjects(subjectsData);
       }
     }
     void loadData();

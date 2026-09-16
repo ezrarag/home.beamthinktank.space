@@ -196,6 +196,119 @@ export const REAL_PRODUCTION_OPPORTUNITIES: BeamOpportunity[] = [
     updatedAt: "2026-04-01T00:00:00Z",
     hasActivePursuit: false,
   },
+  // --- GROUNDS & REDEVELOPMENT WORKFORCE OPPORTUNITIES ---
+  {
+    id: "grant-hud-sec3-youthbuild",
+    externalSource: "manual",
+    sourceId: "hud-sec3-youthbuild",
+    opportunityNumber: "HUD-SEC3-YB-2026",
+    title: "HUD Section 3 YouthBuild Earn-and-Learn Grant",
+    agencyCode: "HUD-YOUTHBUILD",
+    agencyName: "U.S. Dept of Housing & Urban Development (HUD)",
+    description: "Federal workforce development grant paying $30/hr HUD equivalent matches for participant labor on public land trust sites, site remediation, and deconstruction.",
+    applicantTypes: ["Nonprofit 501(c)(3)", "Public Land Trust", "Community Entity"],
+    fundingCategories: ["Housing & Urban Development", "Workforce Development"],
+    awardFloor: 50000,
+    awardCeiling: 120000,
+    estimatedFunding: 500000,
+    costSharing: false,
+    postedDate: "2026-06-01",
+    closeDate: "2026-11-15",
+    sourceUrl: "https://www.hud.gov/program_offices/fair_housing_equal_opp/section3",
+    opportunityContextSources: [
+      {
+        id: "src-nofo-hud-sec3",
+        type: "nofo",
+        name: "HUD_Section3_YouthBuild_NOFO.pdf",
+        shortDescription: "$120,000 allocation · $30/hr stipend match required",
+        status: "ready",
+        pageCount: 32,
+        attachedAt: "2026-06-01T00:00:00Z",
+      },
+    ],
+    createdAt: "2026-06-01T00:00:00Z",
+    updatedAt: "2026-06-01T00:00:00Z",
+    hasActivePursuit: true,
+  },
+  {
+    id: "grant-wioa-pre-apprentice",
+    externalSource: "manual",
+    sourceId: "wioa-pre-apprentice",
+    opportunityNumber: "WIOA-TRADES-2026",
+    title: "WIOA Pre-Apprenticeship Trades Stipend",
+    agencyCode: "STATE-WIOA",
+    agencyName: "State Workforce Development Board",
+    description: "State workforce development stipend providing direct wage subsidies ($25/hr match) for registered pre-apprenticeship restoration work on BEAM Grounds sites.",
+    applicantTypes: ["Community Organization", "Workforce Board"],
+    fundingCategories: ["Employment & Training", "Infrastructure"],
+    awardFloor: 15000,
+    awardCeiling: 45000,
+    estimatedFunding: 180000,
+    costSharing: false,
+    postedDate: "2026-06-15",
+    closeDate: "Rolling Intake",
+    sourceUrl: "https://www.dol.gov/agencies/eta/wioa",
+    opportunityContextSources: [],
+    createdAt: "2026-06-15T00:00:00Z",
+    updatedAt: "2026-06-15T00:00:00Z",
+    hasActivePursuit: true,
+  },
+  {
+    id: "grant-cdbg-rehab-fund",
+    externalSource: "manual",
+    sourceId: "cdbg-rehab-fund",
+    opportunityNumber: "CDBG-REHAB-2026",
+    title: "Municipal CDBG Emergency Structural Rehab Fund",
+    agencyCode: "CITY-DNS",
+    agencyName: "City Department of Neighborhood Services",
+    description: "Community Development Block Grant allocation dedicated to structural stabilization, weatherization, and emergency rehab of tax-foreclosed properties.",
+    applicantTypes: ["Nonprofit Redevelopment Entity", "Land Trust"],
+    fundingCategories: ["Community Development", "Housing Rehabilitation"],
+    awardFloor: 10000,
+    awardCeiling: 35000,
+    estimatedFunding: 140000,
+    costSharing: false,
+    postedDate: "2026-07-01",
+    closeDate: "Rolling Application",
+    sourceUrl: "https://www.hudexchange.info/programs/cdbg-entitlement-program/",
+    opportunityContextSources: [],
+    createdAt: "2026-07-01T00:00:00Z",
+    updatedAt: "2026-07-01T00:00:00Z",
+    hasActivePursuit: false,
+  },
+  {
+    id: "grant-epa-brownfield-assess",
+    externalSource: "manual",
+    sourceId: "epa-brownfield-assess",
+    opportunityNumber: "EPA-BROWNFIELD-2026",
+    title: "EPA Brownfield Phase I/II Environmental Assessment Grant",
+    agencyCode: "EPA-BROWNFIELDS",
+    agencyName: "U.S. Environmental Protection Agency (EPA)",
+    description: "Environmental assessment grant covering 100% of Phase I & II site testing, soil abatement, and environmental remediation for historic commercial and grounds properties.",
+    applicantTypes: ["Public Land Trust", "Municipal Partner", "Nonprofit"],
+    fundingCategories: ["Environment", "Site Remediation"],
+    awardFloor: 25000,
+    awardCeiling: 75000,
+    estimatedFunding: 300000,
+    costSharing: false,
+    postedDate: "2026-05-10",
+    closeDate: "2026-10-30",
+    sourceUrl: "https://www.epa.gov/brownfields/grant-funding-system-brownfields",
+    opportunityContextSources: [
+      {
+        id: "src-nofo-epa-brownfield",
+        type: "nofo",
+        name: "EPA_Brownfield_Assessment_Guidelines.pdf",
+        shortDescription: "$75,000 max · 100% Phase I/II environmental testing coverage",
+        status: "ready",
+        pageCount: 24,
+        attachedAt: "2026-05-10T00:00:00Z",
+      },
+    ],
+    createdAt: "2026-05-10T00:00:00Z",
+    updatedAt: "2026-05-10T00:00:00Z",
+    hasActivePursuit: true,
+  },
 ];
 
 export const REAL_PRODUCTION_SUBJECTS: BeamSubject[] = [
@@ -214,6 +327,38 @@ export const REAL_PRODUCTION_SUBJECTS: BeamSubject[] = [
     description: "Wastewater and environmental water quality sensor monitoring in partnership with Community Water Services.",
     organizationName: "Community Water Services",
     targetLocation: "Milwaukee, WI",
+  },
+  {
+    id: "subject-grounds-land-trust-stewardship",
+    type: "program",
+    name: "Grounds Public Land Trust & Site Stewardship Network",
+    description: "Public land trust acquisition, parcel remediation, and earn-and-learn site stewardship across BEAM redevelopment nodes.",
+    organizationName: "BEAM Grounds Division & Public Land Trust",
+    targetLocation: "Milwaukee & Atlanta Target Nodes",
+  },
+  {
+    id: "subject-urban-ag-community-gardens",
+    type: "purpose",
+    name: "Urban Agriculture & Community Garden Nodes",
+    description: "Sustainable urban agriculture, community gardens, and soil remediation across neighborhood nodes.",
+    organizationName: "BEAM Grounds Division",
+    targetLocation: "Milwaukee & Atlanta Nodes",
+  },
+  {
+    id: "subject-structural-rehab-deconstruction",
+    type: "program",
+    name: "Emergency Structural Rehab & Trades Pre-Apprenticeship Cohort",
+    description: "Trades pre-apprenticeship cohort executing weatherization, structural stabilization, and deconstruction on tax-foreclosed properties.",
+    organizationName: "BEAM Grounds & Trades Cohort",
+    targetLocation: "Milwaukee Target Nodes",
+  },
+  {
+    id: "subject-microenterprise-accelerator",
+    type: "program",
+    name: "BEAM Micro-Enterprise & Local Business Incubator",
+    description: "Subaward monitoring, pass-through fiscal sponsorship, and technical assistance for local micro-enterprises.",
+    organizationName: "BEAM Business Division",
+    targetLocation: "BEAM Regional Networks",
   },
 ];
 
@@ -289,6 +434,195 @@ export const REAL_PRODUCTION_PURSUITS: BeamPursuit[] = [
     createdAt: "2026-05-16T12:00:00Z",
     updatedAt: "2026-05-20T10:00:00Z",
   },
+  {
+    id: "pursuit-hud-youthbuild-grounds",
+    opportunityId: "grant-hud-sec3-youthbuild",
+    opportunityNumber: "HUD-SEC3-YB-2026",
+    opportunityTitle: "HUD Section 3 YouthBuild Earn-and-Learn Grant",
+    agencyName: "U.S. Dept of Housing & Urban Development (HUD)",
+    sourceUrl: "https://www.hud.gov/program_offices/fair_housing_equal_opp/section3",
+
+    subjectId: "subject-grounds-land-trust-stewardship",
+    subjectName: "Grounds Public Land Trust & Site Stewardship Network",
+    subjectType: "program",
+
+    currentGate: "research_qualify",
+    gateProgress: {
+      open: { status: "complete", updatedAt: "2026-06-01T12:00:00Z" },
+      research_qualify: { status: "active", updatedAt: "2026-06-10T10:00:00Z" },
+      drafting: { status: "idle" },
+      submitted: { status: "idle" },
+      decision: { status: "idle" },
+    },
+
+    decision: "pursue",
+    fitScore: 92,
+    strategicFit: 5,
+    eligibilityConfidence: 5,
+    relationshipStrength: 4,
+    effortLevel: 3,
+    rationale: "Matches HUD $30/hr earn-and-learn stipend for youth labor on public land trust parcels and site remediation.",
+
+    targetUsd: 120000,
+    raisedUsd: 0,
+    deadlineDate: "2026-11-15",
+    isFederal: true,
+
+    participants: [
+      {
+        userId: "user-jordan",
+        name: "Jordan Vance",
+        email: "jordan@beamcenter.org",
+        roleId: "grants_lead_manager",
+        roleLabel: "Grounds Project Director",
+        assignedAt: "2026-06-01T12:00:00Z",
+      },
+      {
+        userId: "user-detania",
+        name: "DeTania",
+        email: "detania@beamcenter.org",
+        roleId: "financial_budget_officer",
+        roleLabel: "Stipend & Match Coordinator",
+        assignedAt: "2026-06-05T09:00:00Z",
+      },
+    ],
+    funderContacts: [
+      {
+        id: "fc-hud-1",
+        name: "Marcus Holloway",
+        roleTitle: "HUD Section 3 Regional Coordinator",
+        organizationName: "U.S. Dept of Housing & Urban Development",
+        email: "marcus.holloway@hud.gov",
+        lastContactDate: "2026-06-12",
+        notes: "Confirmed eligibility for public land trust earthwork and earn-and-learn stipends.",
+      },
+    ],
+    pursuitContextSources: [
+      {
+        id: "src-nofo-hud-sec3",
+        type: "nofo",
+        name: "HUD_Section3_YouthBuild_NOFO.pdf",
+        shortDescription: "$120,000 allocation · $30/hr stipend match required",
+        status: "ready",
+        pageCount: 32,
+        attachedAt: "2026-06-01T00:00:00Z",
+      },
+    ],
+    latestActivityPull: "Qualified HUD Section 3 YouthBuild grant for Grounds Land Trust (Jordan)",
+    status: "active",
+    createdAt: "2026-06-01T12:00:00Z",
+    updatedAt: "2026-06-10T10:00:00Z",
+  },
+  {
+    id: "pursuit-epa-brownfield-grounds",
+    opportunityId: "grant-epa-brownfield-assess",
+    opportunityNumber: "EPA-BROWNFIELD-2026",
+    opportunityTitle: "EPA Brownfield Phase I/II Environmental Assessment Grant",
+    agencyName: "U.S. Environmental Protection Agency (EPA)",
+    sourceUrl: "https://www.epa.gov/brownfields/grant-funding-system-brownfields",
+
+    subjectId: "subject-grounds-land-trust-stewardship",
+    subjectName: "Grounds Public Land Trust & Site Stewardship Network",
+    subjectType: "program",
+
+    currentGate: "drafting",
+    gateProgress: {
+      open: { status: "complete", updatedAt: "2026-05-12T12:00:00Z" },
+      research_qualify: { status: "complete", updatedAt: "2026-05-25T10:00:00Z" },
+      drafting: { status: "active", updatedAt: "2026-06-15T14:00:00Z" },
+      submitted: { status: "idle" },
+      decision: { status: "idle" },
+    },
+
+    decision: "pursue",
+    fitScore: 88,
+    strategicFit: 5,
+    eligibilityConfidence: 4,
+    relationshipStrength: 3,
+    effortLevel: 3,
+    rationale: "Covers 100% of Phase I & II environmental testing and soil testing for historic commercial and grounds parcels.",
+
+    targetUsd: 75000,
+    raisedUsd: 0,
+    deadlineDate: "2026-10-30",
+    isFederal: true,
+
+    participants: [
+      {
+        userId: "user-jordan",
+        name: "Jordan Vance",
+        email: "jordan@beamcenter.org",
+        roleId: "grants_lead_manager",
+        roleLabel: "Environmental Lead",
+        assignedAt: "2026-05-12T12:00:00Z",
+      },
+    ],
+    pursuitContextSources: [
+      {
+        id: "src-nofo-epa-brownfield",
+        type: "nofo",
+        name: "EPA_Brownfield_Assessment_Guidelines.pdf",
+        shortDescription: "$75,000 max · 100% Phase I/II environmental testing coverage",
+        status: "ready",
+        pageCount: 24,
+        attachedAt: "2026-05-10T00:00:00Z",
+      },
+    ],
+    latestActivityPull: "Drafting Phase I environmental narrative for Grounds target nodes (Jordan)",
+    status: "active",
+    createdAt: "2026-05-12T12:00:00Z",
+    updatedAt: "2026-06-15T14:00:00Z",
+  },
+  {
+    id: "pursuit-wioa-trades-grounds",
+    opportunityId: "grant-wioa-pre-apprentice",
+    opportunityNumber: "WIOA-TRADES-2026",
+    opportunityTitle: "WIOA Pre-Apprenticeship Trades Stipend",
+    agencyName: "State Workforce Development Board",
+    sourceUrl: "https://www.dol.gov/agencies/eta/wioa",
+
+    subjectId: "subject-structural-rehab-deconstruction",
+    subjectName: "Emergency Structural Rehab & Trades Pre-Apprenticeship Cohort",
+    subjectType: "program",
+
+    currentGate: "open",
+    gateProgress: {
+      open: { status: "active", updatedAt: "2026-06-16T09:00:00Z" },
+      research_qualify: { status: "idle" },
+      drafting: { status: "idle" },
+      submitted: { status: "idle" },
+      decision: { status: "idle" },
+    },
+
+    decision: "pursue",
+    fitScore: 84,
+    strategicFit: 4,
+    eligibilityConfidence: 4,
+    relationshipStrength: 3,
+    effortLevel: 2,
+    rationale: "Direct $25/hr wage subsidy for registered pre-apprenticeship restoration work on tax-foreclosed properties.",
+
+    targetUsd: 45000,
+    raisedUsd: 0,
+    deadlineDate: "2026-12-31",
+    isFederal: false,
+
+    participants: [
+      {
+        userId: "user-marcus",
+        name: "Marcus Vance",
+        email: "marcus.vance@beam.org",
+        roleId: "project_director_program_lead",
+        roleLabel: "Trades Program Instructor",
+        assignedAt: "2026-06-16T09:00:00Z",
+      },
+    ],
+    pursuitContextSources: [],
+    latestActivityPull: "Mapped WIOA Trades Stipend to Emergency Structural Rehab Cohort (Marcus)",
+    status: "active",
+    createdAt: "2026-06-16T09:00:00Z",
+    updatedAt: "2026-06-16T09:00:00Z",
+  },
 ];
 
 export const INITIAL_SEED_ACTIVITY_LOGS: Record<string, ActivityLogEntry[]> = {
@@ -310,6 +644,28 @@ export const INITIAL_SEED_ACTIVITY_LOGS: Record<string, ActivityLogEntry[]> = {
       actionType: "stage_advanced",
       description: "Advanced gate from Open to Research & Qualify.",
       timestamp: "2026-05-20T10:00:00Z",
+    },
+  ],
+  "pursuit-hud-youthbuild-grounds": [
+    {
+      id: "act-hud-1",
+      pursuitId: "pursuit-hud-youthbuild-grounds",
+      actorName: "Jordan Vance",
+      actorEmail: "jordan@beamcenter.org",
+      actionType: "created",
+      description: "Bound HUD Section 3 YouthBuild grant to Grounds Land Trust Network.",
+      timestamp: "2026-06-01T12:00:00Z",
+    },
+  ],
+  "pursuit-epa-brownfield-grounds": [
+    {
+      id: "act-epa-1",
+      pursuitId: "pursuit-epa-brownfield-grounds",
+      actorName: "Jordan Vance",
+      actorEmail: "jordan@beamcenter.org",
+      actionType: "created",
+      description: "Bound EPA Brownfield Environmental Assessment grant to Grounds Land Trust.",
+      timestamp: "2026-05-12T12:00:00Z",
     },
   ],
 };
@@ -476,6 +832,19 @@ export async function seedOpportunityOnDiscovery(opp: BeamOpportunity): Promise<
   }
 }
 
+export async function seedSubjectOnDiscovery(subject: BeamSubject): Promise<void> {
+  try {
+    const db = getFirebaseDb();
+    const ref = doc(db, "beamSubjects", subject.id);
+    const existing = await getDoc(ref);
+    if (!existing.exists()) {
+      await setDoc(ref, subject);
+    }
+  } catch {
+    // Offline fallback
+  }
+}
+
 export async function fetchBeamPursuits(): Promise<BeamPursuit[]> {
   try {
     const db = getFirebaseDb();
@@ -502,6 +871,20 @@ export async function fetchBeamOpportunities(): Promise<BeamOpportunity[]> {
     // Offline fallback
   }
   return REAL_PRODUCTION_OPPORTUNITIES;
+}
+
+export async function fetchBeamSubjects(): Promise<BeamSubject[]> {
+  try {
+    const db = getFirebaseDb();
+    const subRef = collection(db, "beamSubjects");
+    const snap = await getDocs(subRef);
+    if (!snap.empty) {
+      return snap.docs.map((d) => d.data() as BeamSubject);
+    }
+  } catch {
+    // Offline fallback
+  }
+  return REAL_PRODUCTION_SUBJECTS;
 }
 
 // Add funder contact to pursuit (tracked, not staffed)

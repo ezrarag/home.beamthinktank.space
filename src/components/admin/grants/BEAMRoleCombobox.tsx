@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   GRANT_ROLE_GROUPS,
-  GRANT_ROLES,
   type GrantRole,
   type PursuitContextFlags,
   suggestRoles,
@@ -120,6 +119,7 @@ export function BEAMRoleCombobox({
           type="text"
           role="combobox"
           aria-expanded={isOpen}
+          aria-controls="beam-role-listbox"
           aria-haspopup="listbox"
           aria-autocomplete="list"
           placeholder={placeholder}
@@ -151,6 +151,7 @@ export function BEAMRoleCombobox({
       {/* Grouped Dropdown List */}
       {isOpen && (
         <div
+          id="beam-role-listbox"
           ref={listRef}
           role="listbox"
           className="absolute left-0 right-0 top-11 z-50 max-h-72 overflow-y-auto rounded-xl border border-[#23221a] bg-[#0c0c08] p-1 shadow-2xl space-y-2"
